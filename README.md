@@ -48,8 +48,7 @@ Node.js 20.19+ or 22.12+, npm:
 
 ```powershell
 npm install
-npm test
-npm run test:render
+npm run check   # lint, format, 76 logic/server tests, 13 browser-style UI tests, render smoke test, build
 npm run build
 npm run demo
 ```
@@ -79,7 +78,7 @@ Restart the server after changing configuration. Model access and quota depend o
 - `src/hooks/`: `useSpeech` (Hindi text-to-speech), `useVoiceInput` (microphone), `useGuide` (help dialog and `/api/guide` calls).
 - `src/screens/` and `src/components/`: one file per screen or UI piece. `src/App.jsx` only owns the journey state and wires these together.
 - `src/styles.css` + `src/theme.css`: base layout, then the ApniBaat theme layered on top.
-- `server/`: reviewed answers, intent mapping, local production/API server, backend tests.
+- `server/`: reviewed answers, intent mapping, local production/API server, `guard.mjs` (same-origin check and rate limiter shared by every route), `security-headers.mjs` (the CSP and other headers, kept in sync with `vercel.json` by a test), backend tests.
 - `api/`: the same handlers used by Vercel server functions.
 
 | Endpoint | Input | Output |
@@ -95,11 +94,11 @@ Guide requests without schemeId default to Ujjwala for compatibility. Unknown sc
 | Criterion | Evidence |
 |---|---|
 | Smart, dynamic assistant | Hindi audio transcription, reviewed intent classification, teach-back, contextual/conditional questions |
-| Code quality | Shared scheme records; small single-purpose hooks, screens and components instead of one large file; pure journey/checklist/speech modules; isolated recording controller; reusable local/deployed handlers |
-| Security | Server-only keys, bounded audio and inputs, same-origin checks, safe error messages, no identity-document uploads |
-| Efficiency | One short audio request after stopping; 20-second cap; 64 kbps recording; meter updates only re-render when the value changes; memoised derived data; repeated questions reuse the classified intent for 10 minutes; React split into a long-cached chunk; gzip and immutable asset caching on the demo server; cancellation releases resources |
-| Testing | Automated flow, scheme-isolation, journey and checklist rules, HTTP, mocked Gemini, recording race, permission, silence and timeout checks, plus a render smoke test of every screen for all three schemes (`npm run test:render`) |
-| Accessibility | Hindi page language, large labeled controls, editable transcripts, keyboard dialogs, focus restoration, reduced-motion support, text alternatives |
+| Code quality | ESLint (including the React hooks rules) and Prettier enforced by `npm run check`; shared scheme records; small single-purpose hooks, screens and components instead of one large file; pure journey/checklist/speech modules; isolated recording controller; reusable local/deployed handlers |
+| Security | Server-only keys (none in git history), bounded audio and inputs, same-origin checks, shared rate limiter, strict Content-Security-Policy (`script-src 'self'`, no framing), HSTS and related headers, safe error messages, no identity-document uploads |
+| Efficiency | Later screens and the help dialog are code-split and preloaded; web app manifest for home-screen install; one short audio request after stopping; 20-second cap; 64 kbps recording; meter updates only re-render when the value changes; memoised derived data; repeated questions reuse the classified intent for 10 minutes; React split into a long-cached chunk; gzip and immutable asset caching on the demo server; cancellation releases resources |
+| Testing | Automated flow, scheme-isolation, journey and checklist rules, HTTP, mocked Gemini, recording race, permission, silence and timeout checks, a render smoke test of every screen for all three schemes (`npm run test:render`), and browser-style tests (Vitest + Testing Library) that drive the real app through whole journeys, a scripted microphone, the help dialog and the accessibility features (`npm run test:ui`) |
+| Accessibility | Hindi page language, large labeled controls, a skip link, a remembered **बड़े अक्षर** large-text mode, 44 px touch targets, editable transcripts read back aloud, keyboard dialogs, focus moved to each screen heading, reduced-motion and forced-colors support, and WCAG AA text contrast enforced by a test (`src/contrast.test.mjs`) |
 
 No app database is used. Application code does not persist audio, transcripts or answers, and does not log them. Audio and questions go through the server to Google when AI is used; Google's service policies still apply. Avoid personal details in demo speech. Numeric identifiers in text questions are masked before classification. Audio cannot be redacted before the transcription provider receives it, so the UI explicitly warns against speaking private numbers.
 
@@ -124,6 +123,6 @@ Content reviewed for this prototype on **1 October 2026**:
 
 The app is an independent **preparation and understanding guide**. It does not submit government applications, open accounts, authenticate Aadhaar, approve loans, confirm eligibility, or guarantee local scheme availability. Distributor/bank/CSC verification remains necessary. PM Vishwakarma is for existing eligible artisans, not guaranteed beginner training. Jan Dhan credit/insurance benefits are not promised. Scheme changes require content review; there is no automatic government integration.
 
-**Verification status:** 45 automated tests, 28 render checks and the production build passed during implementation. These tests mock Gemini and microphone hardware; they do not establish live transcription quality. Final real spoken Edge verification and the updated public deployment remain pending until a replacement key and account access are ready. No user study or measured social-impact claim is made.
+**Verification status:** 76 logic/server tests, 13 browser-style UI tests, 28 render checks, lint, formatting and the production build pass. These tests mock Gemini and microphone hardware; they do not establish live transcription quality. Final real spoken Edge verification and the updated public deployment remain pending until a replacement key and account access are ready. No user study or measured social-impact claim is made.
 
 Submission checklist and 90-second pitch: [docs/demo-script.md](docs/demo-script.md).

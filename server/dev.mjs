@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { resolve, extname, sep } from "node:path";
 import { gzipSync } from "node:zlib";
+import { SECURITY_HEADERS } from "./security-headers.mjs";
 import { handleGuide } from "../api/guide.mjs";
 import handleTranscribe from "../api/transcribe.mjs";
 
@@ -10,22 +11,14 @@ import handleTranscribe from "../api/transcribe.mjs";
 async function loadLocalEnv() {
   for (const filename of [".env.local", ".env"]) {
     try {
-      const text = await readFile(
-        new URL(`../${filename}`, import.meta.url),
-        "utf8",
-      );
+      const text = await readFile(new URL(`../${filename}`, import.meta.url), "utf8");
       for (const line of text.split(/\r?\n/)) {
-        const match = line.match(
-          /^\s*(?:export\s+)?([A-Z][A-Z0-9_]*)\s*=\s*(.*?)\s*$/,
-        );
+        const match = line.match(/^\s*(?:export\s+)?([A-Z][A-Z0-9_]*)\s*=\s*(.*?)\s*$/);
         if (
           !match ||
-          ![
-            "GEMINI_API_KEY",
-            "GEMINI_MODEL",
-            "GEMINI_AUDIO_MODEL",
-            "API_PORT",
-          ].includes(match[1]) ||
+          !["GEMINI_API_KEY", "GEMINI_MODEL", "GEMINI_AUDIO_MODEL", "API_PORT"].includes(
+            match[1],
+          ) ||
           process.env[match[1]] !== undefined
         )
           continue;
@@ -49,9 +42,7 @@ export function createApiServer(options = {}) {
     if (path === "/api/health" && req.method === "GET") {
       res.end(
         JSON.stringify({
-          geminiConfigured: Boolean(
-            (options.env || process.env).GEMINI_API_KEY?.trim(),
-          ),
+          geminiConfigured: Boolean((options.env || process.env).GEMINI_API_KEY?.trim()),
         }),
       );
     } else if (
@@ -62,15 +53,13 @@ export function createApiServer(options = {}) {
       try {
         const root = resolve(options.staticDir);
         const decoded = decodeURIComponent(path);
-        const target = resolve(
-          root,
-          "." + (decoded === "/" ? "/index.html" : decoded),
-        );
+        const target = resolve(root, "." + (decoded === "/" ? "/index.html" : decoded));
         const types = {
           ".html": "text/html; charset=utf-8",
           ".js": "text/javascript; charset=utf-8",
           ".css": "text/css; charset=utf-8",
           ".svg": "image/svg+xml",
+          ".webmanifest": "application/manifest+json",
           ".png": "image/png",
           ".ico": "image/x-icon",
           ".webp": "image/webp",
@@ -84,15 +73,15 @@ export function createApiServer(options = {}) {
           throw new Error("invalid");
         const content = await readFile(target);
         res.setHeader("Content-Type", types[extname(target)]);
-        res.setHeader("X-Content-Type-Options", "nosniff");
-        res.setHeader(
-          "Permissions-Policy",
-          "camera=(), geolocation=(), microphone=(self)",
-        );
+        for (const [name, value] of Object.entries(SECURITY_HEADERS)) res.setHeader(name, value);
         if (decoded.startsWith("/assets/"))
           res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
         let body = content;
-        if (/gzip/.test(req.headers["accept-encoding"] || "") && /text|javascript|svg/.test(types[extname(target)]) && content.length > 1024) {
+        if (
+          /gzip/.test(req.headers["accept-encoding"] || "") &&
+          /text|javascript|svg/.test(types[extname(target)]) &&
+          content.length > 1024
+        ) {
           body = gzipCache.get(target) || gzipCache.set(target, gzipSync(content)).get(target);
           res.setHeader("Content-Encoding", "gzip");
           res.setHeader("Vary", "Accept-Encoding");
@@ -109,10 +98,7 @@ export function createApiServer(options = {}) {
   });
 }
 
-if (
-  process.argv[1] &&
-  resolve(process.argv[1]) === fileURLToPath(import.meta.url)
-) {
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   await loadLocalEnv();
   const port = Number(process.env.API_PORT) || 8787;
   const server = createApiServer({

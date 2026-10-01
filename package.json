@@ -10,17 +10,33 @@
     "build": "vite build --configLoader native",
     "preview": "vite preview --host 127.0.0.1 --configLoader native",
     "demo": "node server/dev.mjs --serve-dist",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "node --test server/guide.test.mjs server/transcribe.test.mjs server/hardening.test.mjs src/flow.test.mjs src/voice/recorder.test.mjs shared/schemes.test.mjs src/journey.test.mjs src/contrast.test.mjs",
+    "test:ui": "vitest run",
     "test:render": "node scripts/smoke-render.mjs",
-    "test": "node --test server/guide.test.mjs server/transcribe.test.mjs src/flow.test.mjs src/voice/recorder.test.mjs shared/schemes.test.mjs src/journey.test.mjs"
+    "check": "npm run lint && npm run format:check && npm test && npm run test:ui && npm run test:render && npm run build"
   },
   "dependencies": {
+    "lucide-react": "^0.468.0",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1",
-    "lucide-react": "^0.468.0"
+    "react-dom": "^19.1.1"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
+    "@vitejs/plugin-react": "^5.0.3",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.13.0",
+    "jsdom": "^29.1.1",
+    "prettier": "^3.9.9",
     "vite": "^7.1.7",
-    "@vitejs/plugin-react": "^5.0.3"
+    "vitest": "^4.1.11"
   },
   "engines": {
     "node": ">=20.19.0"

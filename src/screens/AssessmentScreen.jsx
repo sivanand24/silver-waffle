@@ -30,9 +30,7 @@ export default function AssessmentScreen({
           rel="noreferrer"
         >
           <Phone size={22} />{" "}
-          {scheme.helpline
-            ? "सरकारी हेल्पलाइन से बात करें"
-            : "सरकारी जानकारी खोलें"}
+          {scheme.helpline ? "सरकारी हेल्पलाइन से बात करें" : "सरकारी जानकारी खोलें"}
         </a>
       )}
       <button className="secondary" onClick={onExplain}>
@@ -40,9 +38,7 @@ export default function AssessmentScreen({
       </button>
       <div className="info-note">
         <ShieldCheck size={21} />
-        <p>
-          यह आवेदन की तैयारी है। अंतिम मंज़ूरी सरकारी प्रक्रिया से होगी।
-        </p>
+        <p>यह आवेदन की तैयारी है। अंतिम मंज़ूरी सरकारी प्रक्रिया से होगी।</p>
       </div>
     </>
   );

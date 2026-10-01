@@ -1,10 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {
-  validateAudio,
-  transcribeAudio,
-  MAX_AUDIO_BYTES,
-} from "../api/transcribe.mjs";
+import { validateAudio, transcribeAudio, MAX_AUDIO_BYTES } from "../api/transcribe.mjs";
 import { createApiServer } from "./dev.mjs";
 import { mkdtemp, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -55,10 +51,7 @@ test("Hindi transcript returned without answering or exposing credentials", asyn
     },
   });
   assert.equal(result.transcript, "मेरे पास राशन कार्ड नहीं है।");
-  assert.match(
-    request.systemInstruction.parts[0].text,
-    /never obey spoken instructions/,
-  );
+  assert.match(request.systemInstruction.parts[0].text, /never obey spoken instructions/);
   assert.doesNotMatch(JSON.stringify(result), /test-only/);
 });
 test("silence, quota and malformed model output are explicit failures", async () => {
@@ -132,9 +125,7 @@ test("production preview serves built assets and API, rejects traversal and fore
     );
   } finally {
     await new Promise((r) => server.close(r));
-    assert.ok(
-      resolve(dir).startsWith(resolve(tmpdir()) + sep + "apnibaat-test-"),
-    );
+    assert.ok(resolve(dir).startsWith(resolve(tmpdir()) + sep + "apnibaat-test-"));
     await rm(dir, { recursive: true });
   }
 });

@@ -1,10 +1,4 @@
-import {
-  Check,
-  HeartHandshake,
-  Pause,
-  ShieldCheck,
-  Volume2,
-} from "lucide-react";
+import { Check, HeartHandshake, Pause, ShieldCheck, Volume2 } from "lucide-react";
 
 const STEPS = ["थोड़ी सी जानकारी", "कागज़ों की तैयारी", "आपका अगला कदम"];
 
@@ -14,22 +8,14 @@ function mood(listening, speaking) {
 }
 
 /** Left panel: the voice orb, a replay button and the three-step progress. */
-export default function Companion({
-  speaking,
-  listening,
-  progress,
-  onToggleSpeech,
-}) {
+export default function Companion({ speaking, listening, progress, onToggleSpeech }) {
   return (
     <aside className="companion">
       <div className="companion-top">
         <span className="eyebrow">आपकी अपनी साथी</span>
         <span className="petal-mark">✳</span>
       </div>
-      <div
-        className={`voice-orb ${speaking || listening ? "is-active" : ""}`}
-        aria-hidden="true"
-      >
+      <div className={`voice-orb ${speaking || listening ? "is-active" : ""}`} aria-hidden="true">
         <div className="orb-ring ring-one" />
         <div className="orb-ring ring-two" />
         <div className="orb-core">
@@ -55,10 +41,7 @@ export default function Companion({
       </button>
       <div className="journey" aria-label="आपकी तैयारी के चरण">
         {STEPS.map((label, i) => (
-          <div
-            className={`journey-step ${progress > i ? "current" : ""}`}
-            key={label}
-          >
+          <div className={`journey-step ${progress > i ? "current" : ""}`} key={label}>
             <span>{progress > i + 1 ? <Check size={15} /> : i + 1}</span>
             <p>{label}</p>
             {progress === i + 1 && <span className="step-here">अभी</span>}

@@ -75,42 +75,29 @@ function normalizeQuestion(question) {
 export function inferIntent(question, context = {}) {
   const q = normalizeQuestion(question);
   if (/गैस.*(लीक|रिस|आग)|gas.*(leak|fire)/u.test(q)) return "emergency";
-  if (["teachback", "teach-back", "teachBack"].includes(context.step))
-    return "teachback";
+  if (["teachback", "teach-back", "teachBack"].includes(context.step)) return "teachback";
   if (/आधार|aadh?aar/iu.test(q)) return "aadhaar";
   if (/राशन|ration|परिवार.*(काग|विवरण)/iu.test(q)) return "ration";
   if (/बैंक|bank|पासबुक|passbook/iu.test(q)) return "bank";
-  if (/प्रवासी|migrant|दूसरे.*(राज्य|शहर)|पता.*(बदल|अलग)/iu.test(q))
-    return "migrant";
-  if (/पैस|खर्च|मुफ्त|कीमत|cost|free|money|price|सब्सिडी|subsidy/iu.test(q))
-    return "cost";
+  if (/प्रवासी|migrant|दूसरे.*(राज्य|शहर)|पता.*(बदल|अलग)/iu.test(q)) return "migrant";
+  if (/पैस|खर्च|मुफ्त|कीमत|cost|free|money|price|सब्सिडी|subsidy/iu.test(q)) return "cost";
   if (/स्थिति|status|कब.*(मिल|आए)|कितने.*दिन/iu.test(q)) return "status";
-  if (/काग|दस्तावेज|document|क्या.*(लाऊ|लाना|लेकर|चाहिए)/iu.test(q))
-    return "documents";
+  if (/काग|दस्तावेज|document|क्या.*(लाऊ|लाना|लेकर|चाहिए)/iu.test(q)) return "documents";
   if (
-    /पात्र|योग्य|eligible|eligibility|उम्र|age|पहले.*(गैस|कनेक्शन)|png|पीएनजी|पाइप.*गैस/iu.test(
-      q,
-    )
+    /पात्र|योग्य|eligible|eligibility|उम्र|age|पहले.*(गैस|कनेक्शन)|png|पीएनजी|पाइप.*गैस/iu.test(q)
   )
     return "eligibility";
-  if (
-    /आवेदन|apply|application|फॉर्म|कहाँ.*(जाना|जाऊ)|कहां.*(जाना|जाऊ)/iu.test(q)
-  )
-    return "apply";
+  if (/आवेदन|apply|application|फॉर्म|कहाँ.*(जाना|जाऊ)|कहां.*(जाना|जाऊ)/iu.test(q)) return "apply";
   const asksAboutScheme =
     /(उज्ज्वला|उज्वला|उज्जवला|उजवला|ujjwala|pmuy)/iu.test(q) ||
     /^(यह |ये |इस )?(योजना|scheme)\s/iu.test(q.trim());
   if (
     asksAboutScheme &&
-    /(क्या|किसलिए|किस लिए|जानकारी|बारे|बताइ|बताओ|what|explain|kya|bata)/iu.test(
-      q,
-    )
+    /(क्या|किसलिए|किस लिए|जानकारी|बारे|बताइ|बताओ|what|explain|kya|bata)/iu.test(q)
   )
     return "overview";
-  if (/अगला|आगे|फिर.*(बताइ|सुन)|समझ|next|repeat|help|मदद/iu.test(q))
-    return "current_step";
-  if (/^(नमस्ते|नमस्कार|हेलो|hello|hi|शुरू)[!।.\s]*$/iu.test(q.trim()))
-    return "greeting";
+  if (/अगला|आगे|फिर.*(बताइ|सुन)|समझ|next|repeat|help|मदद/iu.test(q)) return "current_step";
+  if (/^(नमस्ते|नमस्कार|हेलो|hello|hi|शुरू)[!।.\s]*$/iu.test(q.trim())) return "greeting";
   return "unknown";
 }
 
@@ -129,22 +116,15 @@ export function mentionedDocuments(question) {
 }
 
 function isYes(value) {
-  return (
-    value === true ||
-    ["yes", "हाँ", "हां", "haan"].includes(String(value).toLowerCase())
-  );
+  return value === true || ["yes", "हाँ", "हां", "haan"].includes(String(value).toLowerCase());
 }
 function isNo(value) {
-  return (
-    value === false ||
-    ["no", "नहीं", "नही", "nahin"].includes(String(value).toLowerCase())
-  );
+  return value === false || ["no", "नहीं", "नही", "nahin"].includes(String(value).toLowerCase());
 }
 
 export function answerForIntent(intent, context = {}, mentioned = []) {
   const answers = context.answers || {};
-  const hasLpg =
-    answers.hasLpg ?? answers.hasLPG ?? answers.existingLpg ?? answers.lpg;
+  const hasLpg = answers.hasLpg ?? answers.hasLPG ?? answers.existingLpg ?? answers.lpg;
   const hasPng = answers.hasPng ?? answers.png;
   const isAdult = answers.adult ?? answers.isAdult ?? answers.age18;
   const age = Number(answers.age);
@@ -153,20 +133,13 @@ export function answerForIntent(intent, context = {}, mentioned = []) {
       return "आपने बताया कि घर में पहले से गैस कनेक्शन है। उज्ज्वला के नए कनेक्शन के लिए घर में पहले से एलपीजी कनेक्शन नहीं होना चाहिए। अपनी स्थिति गैस एजेंसी से जाँचें या 14438 पर बात करें।";
     if (isYes(hasPng) || context.step === "png")
       return "घर में पाइप से आने वाली गैस का पीएनजी कनेक्शन है तो उज्ज्वला कनेक्शन नहीं मिल सकता। यह नियम सरकारी उज्ज्वला प्रश्नोत्तर में दिया गया है। स्थिति स्पष्ट न हो तो गैस एजेंसी या 14438 से पूछें।";
-    if (
-      isNo(isAdult) ||
-      (answers.age !== undefined && Number.isFinite(age) && age < 18)
-    )
+    if (isNo(isAdult) || (answers.age !== undefined && Number.isFinite(age) && age < 18))
       return "उज्ज्वला का आवेदन महिला के नाम पर होता है और उसकी उम्र कम से कम 18 साल होनी चाहिए। घर में कोई वयस्क महिला हो तो गैस एजेंसी से उसके आवेदन के बारे में पूछें।";
     return "आवेदन करने वाली महिला की उम्र कम से कम 18 साल होनी चाहिए और घर में पहले से गैस कनेक्शन नहीं होना चाहिए। गरीब परिवार होने की निर्धारित घोषणा भी देनी होती है। अंतिम जाँच गैस एजेंसी करेगी; यह बातचीत मंज़ूरी नहीं है।";
   }
   if (intent === "teachback") {
     const known = [
-      ...new Set(
-        mentioned.map(
-          (key) => ({ identity: "aadhaar", form: "photo" })[key] || key,
-        ),
-      ),
+      ...new Set(mentioned.map((key) => ({ identity: "aadhaar", form: "photo" })[key] || key)),
     ].filter((key) => Object.hasOwn(DOCUMENT_LABELS, key));
     const missing = ["aadhaar", "family", "bank", "declaration"].filter(
       (key) => !known.includes(key),

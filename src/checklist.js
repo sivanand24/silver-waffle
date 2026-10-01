@@ -10,8 +10,7 @@ export function buildChecklistText(scheme, documents) {
     "यह तैयारी की सूची है; आवेदन जमा नहीं हुआ है।",
     "",
     ...scheme.documents.map(
-      (d) =>
-        `${documents[d.id] === "ready" ? READY : PENDING}: ${d.title}\n${d.detail}`,
+      (d) => `${documents[d.id] === "ready" ? READY : PENDING}: ${d.title}\n${d.detail}`,
     ),
     "",
     scheme.handoff,
@@ -28,9 +27,7 @@ export function checklistFilename(schemeId) {
 
 /** Triggers a browser download. The BOM keeps Devanagari readable in Notepad. */
 export function downloadText(filename, text) {
-  const url = URL.createObjectURL(
-    new Blob(["﻿" + text], { type: "text/plain;charset=utf-8" }),
-  );
+  const url = URL.createObjectURL(new Blob(["﻿" + text], { type: "text/plain;charset=utf-8" }));
   const link = document.createElement("a");
   link.href = url;
   link.download = filename;

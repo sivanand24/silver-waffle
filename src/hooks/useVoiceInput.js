@@ -11,21 +11,31 @@ const INITIAL = {
 };
 const BUSY = new Set(["permission", "recording", "transcribing"]);
 
-/** React binding for the framework-free recorder in `voice/recorder.js`. */
-export function useVoiceInput() {
+/**
+ * React binding for the framework-free recorder in `voice/recorder.js`.
+ * `onTranscript({ transcript, target })` fires once when a transcript is ready
+ * for review.
+ */
+export function useVoiceInput({ onTranscript } = {}) {
   const controller = useRef(null);
   const busy = useRef(false);
+  const lastStatus = useRef("idle");
   const [voice, setVoice] = useState(INITIAL);
+  const notify = useRef(onTranscript);
+  useEffect(() => {
+    notify.current = onTranscript;
+  });
 
   useEffect(() => {
     controller.current = createVoiceRecorder({
       onChange: (next) => {
         busy.current = BUSY.has(next.status);
+        const arrived = next.status === "review" && lastStatus.current !== "review";
+        lastStatus.current = next.status;
         setVoice(next);
+        if (arrived) notify.current?.(next);
       },
-      getUserMedia: navigator.mediaDevices?.getUserMedia?.bind(
-        navigator.mediaDevices,
-      ),
+      getUserMedia: navigator.mediaDevices?.getUserMedia?.bind(navigator.mediaDevices),
       Recorder: window.MediaRecorder,
       AudioContextClass: window.AudioContext || window.webkitAudioContext,
     });

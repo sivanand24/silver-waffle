@@ -62,27 +62,16 @@ export default function GuideDialog({
             <HeartHandshake size={28} />
           </span>
           <div>
-            <h2 id="guide-title">
-              {teachback ? "एक छोटा-सा अभ्यास" : "पूछिए, मैं साथ हूँ।"}
-            </h2>
-            <p>
-              {configured
-                ? "ApniBaat · AI की मदद से"
-                : "ApniBaat · सहेजी गई जानकारी"}
-            </p>
+            <h2 id="guide-title">{teachback ? "एक छोटा-सा अभ्यास" : "पूछिए, मैं साथ हूँ।"}</h2>
+            <p>{configured ? "ApniBaat · AI की मदद से" : "ApniBaat · सहेजी गई जानकारी"}</p>
           </div>
-          <button
-            className="icon-button"
-            onClick={onClose}
-            aria-label="मदद बंद करें"
-          >
+          <button className="icon-button" onClick={onClose} aria-label="मदद बंद करें">
             <X size={23} />
           </button>
         </div>
         <p className="dialog-intro">
           {teachback
-            ? scheme.authority +
-              " जाते समय आप कौन से कागज़ साथ ले जाएँगी? अपने शब्दों में बताइए।"
+            ? scheme.authority + " जाते समय आप कौन से कागज़ साथ ले जाएँगी? अपने शब्दों में बताइए।"
             : "अपना सवाल बोलकर या आसान शब्दों में लिखकर पूछिए।"}
         </p>
         {!teachback && (
@@ -101,9 +90,7 @@ export default function GuideDialog({
             onAsk();
           }}
         >
-          <label htmlFor="question-input">
-            {teachback ? "आपका जवाब" : "आपका सवाल"}
-          </label>
+          <label htmlFor="question-input">{teachback ? "आपका जवाब" : "आपका सवाल"}</label>
           <textarea
             id="question-input"
             ref={input}
@@ -114,22 +101,9 @@ export default function GuideDialog({
             rows={3}
           />
           <div className="query-actions">
-            <VoiceButton
-              voice={voice}
-              className="secondary"
-              iconSize={21}
-              onClick={onListen}
-            />
-            <button
-              className="primary"
-              disabled={!query.trim() || busy}
-              type="submit"
-            >
-              {busy ? (
-                <LoaderCircle size={21} className="spin" />
-              ) : (
-                <Send size={19} />
-              )}{" "}
+            <VoiceButton voice={voice} className="secondary" iconSize={21} onClick={onListen} />
+            <button className="primary" disabled={!query.trim() || busy} type="submit">
+              {busy ? <LoaderCircle size={21} className="spin" /> : <Send size={19} />}{" "}
               {busy ? "एक पल…" : teachback ? "मेरा जवाब देखें" : "जवाब बताएँ"}
             </button>
           </div>
@@ -148,15 +122,9 @@ export default function GuideDialog({
             </div>
             <p>{reply.answer}</p>
             {reply.mode === "offline" && (
-              <small>
-                अभी AI से बात नहीं हुई। यह पहले से जाँची हुई सामान्य जानकारी है।
-              </small>
+              <small>अभी AI से बात नहीं हुई। यह पहले से जाँची हुई सामान्य जानकारी है।</small>
             )}
-            <a
-              href={reply.sourceUrl || scheme.source}
-              target="_blank"
-              rel="noreferrer"
-            >
+            <a href={reply.sourceUrl || scheme.source} target="_blank" rel="noreferrer">
               सरकारी स्रोत देखें <ExternalLink size={14} />
             </a>
           </div>

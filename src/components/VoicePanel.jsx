@@ -67,11 +67,7 @@ export default function VoicePanel({
             onChange={(e) => onHeardTextChange(e.target.value)}
           />
           <div className="query-actions">
-            <button
-              className="primary"
-              disabled={!heardText.trim()}
-              onClick={onConfirm}
-            >
+            <button className="primary" disabled={!heardText.trim()} onClick={onConfirm}>
               <Check size={19} /> सही है
             </button>
             <button className="secondary" onClick={onRetry}>

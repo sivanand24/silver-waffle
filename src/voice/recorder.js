@@ -64,11 +64,12 @@ export function createVoiceRecorder({
     if (old?.recorder?.state === "recording") {
       try {
         old.recorder.stop();
-      } catch {}
+      } catch {
+        /* already stopped */
+      }
     }
     release(old);
-    if (notify)
-      emit({ status: "idle", transcript: "", error: "", level: 0, seconds: 0 });
+    if (notify) emit({ status: "idle", transcript: "", error: "", level: 0, seconds: 0 });
   }
   function fail(s, message) {
     if (!owns(s)) return;
@@ -86,8 +87,7 @@ export function createVoiceRecorder({
     if (!owns(s)) return;
     const blob = new Blob(s.chunks, { type: s.mime });
     s.chunks = [];
-    if (blob.size < 64)
-      return fail(s, "आवाज़ नहीं मिली। माइक के पास बोलकर फिर कोशिश करें।");
+    if (blob.size < 64) return fail(s, "आवाज़ नहीं मिली। माइक के पास बोलकर फिर कोशिश करें।");
     if (blob.size > MAX_AUDIO_BYTES)
       return fail(s, "आवाज़ का संदेश बड़ा है। छोटा जवाब बोलकर फिर कोशिश करें।");
     emit({ status: "transcribing", level: 0 });
@@ -95,10 +95,7 @@ export function createVoiceRecorder({
     s.requestTimer = setTimer(() => {
       if (owns(s)) {
         s.controller.abort();
-        fail(
-          s,
-          "जवाब आने में देर हो रही है। इंटरनेट जाँचें या लिखकर जवाब दें।",
-        );
+        fail(s, "जवाब आने में देर हो रही है। इंटरनेट जाँचें या लिखकर जवाब दें।");
       }
     }, requestMs);
     try {
@@ -126,10 +123,7 @@ export function createVoiceRecorder({
             : "आवाज़ लिखी नहीं जा सकी। फिर कोशिश करें या लिखकर जवाब दें।",
         );
       if (typeof result.transcript !== "string" || !result.transcript.trim())
-        return fail(
-          s,
-          "साफ़ शब्द नहीं सुनाई दिए। पास से बोलकर फिर कोशिश करें।",
-        );
+        return fail(s, "साफ़ शब्द नहीं सुनाई दिए। पास से बोलकर फिर कोशिश करें।");
       emit({
         status: "review",
         transcript: result.transcript.trim().slice(0, 1200),
@@ -137,8 +131,7 @@ export function createVoiceRecorder({
         level: 0,
       });
     } catch {
-      if (owns(s))
-        fail(s, "आवाज़ भेजी नहीं जा सकी। इंटरनेट जाँचें या लिखकर जवाब दें।");
+      if (owns(s)) fail(s, "आवाज़ भेजी नहीं जा सकी। इंटरनेट जाँचें या लिखकर जवाब दें।");
     } finally {
       clearTimer(s.requestTimer);
     }
@@ -176,11 +169,7 @@ export function createVoiceRecorder({
         "यहाँ आवाज़ रिकॉर्ड नहीं हो सकती। Edge में HTTPS वाला लिंक खोलें या लिखकर जवाब दें।",
       );
     s.permissionTimer = setTimer(
-      () =>
-        fail(
-          s,
-          "माइक की अनुमति का इंतज़ार खत्म हुआ। अनुमति देकर फिर माइक दबाएँ।",
-        ),
+      () => fail(s, "माइक की अनुमति का इंतज़ार खत्म हुआ। अनुमति देकर फिर माइक दबाएँ।"),
       permissionMs,
     );
     try {
@@ -197,12 +186,9 @@ export function createVoiceRecorder({
       }
       clearTimer(s.permissionTimer);
       s.stream = stream;
-      s.mime = [
-        "audio/webm;codecs=opus",
-        "audio/webm",
-        "audio/ogg;codecs=opus",
-        "audio/mp4",
-      ].find((type) => Recorder.isTypeSupported(type));
+      s.mime = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus", "audio/mp4"].find(
+        (type) => Recorder.isTypeSupported(type),
+      );
       if (!s.mime)
         return fail(
           s,
@@ -214,15 +200,13 @@ export function createVoiceRecorder({
       });
       for (const track of stream.getTracks())
         track.onended = () => {
-          if (!s.released)
-            fail(s, "माइक का संपर्क टूट गया। उसे जोड़कर फिर कोशिश करें।");
+          if (!s.released) fail(s, "माइक का संपर्क टूट गया। उसे जोड़कर फिर कोशिश करें।");
         };
       s.recorder.ondataavailable = (event) => {
         if (!owns(s) || !event.data.size) return;
         s.chunks.push(event.data);
         s.bytes += event.data.size;
-        if (s.bytes > MAX_AUDIO_BYTES)
-          fail(s, "आवाज़ का संदेश बड़ा है। छोटा जवाब बोलें।");
+        if (s.bytes > MAX_AUDIO_BYTES) fail(s, "आवाज़ का संदेश बड़ा है। छोटा जवाब बोलें।");
       };
       s.recorder.onstop = () => {
         if (owns(s)) void upload(s);
@@ -252,8 +236,7 @@ export function createVoiceRecorder({
           level = Math.min(
             1,
             Math.sqrt(
-              s.samples.reduce((sum, v) => sum + ((v - 128) / 128) ** 2, 0) /
-                s.samples.length,
+              s.samples.reduce((sum, v) => sum + ((v - 128) / 128) ** 2, 0) / s.samples.length,
             ) * 5,
           );
         }

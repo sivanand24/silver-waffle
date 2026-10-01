@@ -20,8 +20,7 @@ export default function SwitchDialog({ open, onConfirm, onStay }) {
       <div className="dialog-body">
         <h2 id="switch-title">दूसरी सहायता चुनना चाहती हैं?</h2>
         <p className="lead">
-          अभी के जवाब और तैयारी की सूची हट जाएँगे। चाहें तो पहले सूची सेव कर
-          लें।
+          अभी के जवाब और तैयारी की सूची हट जाएँगे। चाहें तो पहले सूची सेव कर लें।
         </p>
         <button className="primary" onClick={onConfirm}>
           हाँ, दूसरी सहायता चुनें

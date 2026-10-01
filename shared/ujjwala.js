@@ -34,8 +34,7 @@ export const DOCUMENTS = [
   {
     id: "identity",
     title: "आधार की प्रतियाँ",
-    detail:
-      "अपना आधार और परिवार के कागज़ में लिखे सभी वयस्क सदस्यों के आधार की प्रतियाँ.",
+    detail: "अपना आधार और परिवार के कागज़ में लिखे सभी वयस्क सदस्यों के आधार की प्रतियाँ.",
     icon: "id",
   },
   {
@@ -120,18 +119,10 @@ export function speechChoice(text) {
     .replace(/[،,!?।.]+/gu, " ")
     .replace(/\s+/gu, " ")
     .trim();
-  if (
-    /पता नहीं|मालूम नहीं|शायद|नहीं जान|not sure|don't know|dont know/.test(
-      value,
-    )
-  )
+  if (/पता नहीं|मालूम नहीं|शायद|नहीं जान|not sure|don't know|dont know/.test(value))
     return "unknown";
-  if (
-    /^(नहीं|नही|ना|न|no|nahin|nahi)([।.!\s]|$)/.test(value) ||
-    /नहीं है|नही है/.test(value)
-  )
+  if (/^(नहीं|नही|ना|न|no|nahin|nahi)([।.!\s]|$)/.test(value) || /नहीं है|नही है/.test(value))
     return "no";
-  if (/^(हाँ|हां|जी हाँ|जी हां|yes|haan|han|ha)([।.!\s]|$)/.test(value))
-    return "yes";
+  if (/^(हाँ|हां|जी हाँ|जी हां|yes|haan|han|ha)([।.!\s]|$)/.test(value)) return "yes";
   return null;
 }

@@ -43,10 +43,7 @@ export default function QuestionScreen({
         <details className="trade-list">
           <summary>18 कामों की सूची देखें</summary>
           <p>{TRADES.join(" · ")}</p>
-          <button
-            className="secondary"
-            onClick={() => onSpeak(TRADES.join("। "))}
-          >
+          <button className="secondary" onClick={() => onSpeak(TRADES.join("। "))}>
             <Volume2 size={18} /> सूची सुनें
           </button>
         </details>
@@ -65,12 +62,7 @@ export default function QuestionScreen({
           </button>
         ))}
       </div>
-      <VoiceButton
-        voice={voice}
-        className="voice-answer"
-        iconSize={23}
-        onClick={onListen}
-      />
+      <VoiceButton voice={voice} className="voice-answer" iconSize={23} onClick={onListen} />
       {voicePanel}
       <p className="voice-consent">
         बोलने पर आवाज़ लिखने के लिए Gemini तक जाएगी। निजी नंबर न बोलें।

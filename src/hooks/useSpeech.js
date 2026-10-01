@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const isHindi = (voice) =>
-  voice.lang.replace("_", "-").toLowerCase().startsWith("hi");
+const isHindi = (voice) => voice.lang.replace("_", "-").toLowerCase().startsWith("hi");
 
 /**
  * Hindi text-to-speech with stale-callback protection.
@@ -14,8 +13,10 @@ export function useSpeech({ enabled, isBlocked, onNotice }) {
   const [speaking, setSpeaking] = useState(false);
   const utterance = useRef(null);
   const hindiVoice = useRef(null);
-  const latest = useRef({});
-  latest.current = { enabled, isBlocked, onNotice };
+  const latest = useRef({ enabled, isBlocked, onNotice });
+  useEffect(() => {
+    latest.current = { enabled, isBlocked, onNotice };
+  });
 
   useEffect(() => {
     const synth = window.speechSynthesis;
@@ -43,9 +44,7 @@ export function useSpeech({ enabled, isBlocked, onNotice }) {
     if (!enabled && !force) return;
     const synth = window.speechSynthesis;
     if (!synth) {
-      onNotice?.(
-        "इस ब्राउज़र पर आवाज़ उपलब्ध नहीं है. आप नीचे के बड़े बटन इस्तेमाल कर सकती हैं.",
-      );
+      onNotice?.("इस ब्राउज़र पर आवाज़ उपलब्ध नहीं है. आप नीचे के बड़े बटन इस्तेमाल कर सकती हैं.");
       return;
     }
     if (isBlocked?.()) return; // never talk over the microphone
@@ -63,9 +62,7 @@ export function useSpeech({ enabled, isBlocked, onNotice }) {
       if (!current()) return;
       setSpeaking(false);
       if (e.error !== "interrupted" && e.error !== "canceled")
-        onNotice?.(
-          "हिंदी आवाज़ नहीं चल पाई. नीचे लिखे सवाल और बड़े बटन से आगे बढ़ें.",
-        );
+        onNotice?.("हिंदी आवाज़ नहीं चल पाई. नीचे लिखे सवाल और बड़े बटन से आगे बढ़ें.");
     };
     // Chrome drops speak() issued in the same tick as cancel().
     setTimeout(() => current() && synth.speak(speech), 60);

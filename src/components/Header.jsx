@@ -1,6 +1,12 @@
 import { HeartHandshake, Volume2, VolumeX } from "lucide-react";
 
-export default function Header({ audioOn, onToggleAudio, onBrandClick }) {
+export default function Header({
+  audioOn,
+  onToggleAudio,
+  largeText,
+  onToggleLargeText,
+  onBrandClick,
+}) {
   return (
     <header className="header">
       <a
@@ -21,6 +27,9 @@ export default function Header({ audioOn, onToggleAudio, onBrandClick }) {
       </a>
       <div className="header-actions">
         <span className="language">हिंदी</span>
+        <button className="text-size-toggle" onClick={onToggleLargeText} aria-pressed={largeText}>
+          बड़े अक्षर
+        </button>
         <button
           className={`audio-toggle ${audioOn ? "active" : ""}`}
           onClick={onToggleAudio}

@@ -37,12 +37,7 @@ export const SCHEMES = {
     note: "प्रवासी परिवारों के लिए कुछ कागज़ों की जगह निर्धारित स्व-घोषणा का विकल्प है। गैस एजेंसी से सही प्रारूप पूछें।",
     questions: UJJWALA_QUESTIONS.map((q) => ({
       ...q,
-      stopOn:
-        q.id === "adult"
-          ? "no"
-          : ["lpg", "png"].includes(q.id)
-            ? "yes"
-            : undefined,
+      stopOn: q.id === "adult" ? "no" : ["lpg", "png"].includes(q.id) ? "yes" : undefined,
     })),
     documents: UJJWALA_DOCUMENTS.map((d) => ({
       ...d,
@@ -71,8 +66,7 @@ export const SCHEMES = {
     icon: "bank",
     headline: "अपना बैंक खाता,",
     description: "पहला बैंक खाता खोलने का रास्ता जानें।",
-    source:
-      "https://financialservices.gov.in/pradhan-mantri-jan-dhan-yojana-pmjdy",
+    source: "https://financialservices.gov.in/pradhan-mantri-jan-dhan-yojana-pmjdy",
     faq: "https://www.pmjdy.gov.in/hi-scheme",
     helpline: "1800110001",
     authority: "बैंक या बैंक मित्र",
@@ -126,11 +120,7 @@ export const SCHEMES = {
         ["फॉर्म", "आवेदन", "पैन", "form", "pan"],
       ),
     ],
-    suggestions: [
-      "जन धन खाता क्या है?",
-      "पहले से बैंक खाता है",
-      "आधार नहीं है",
-    ],
+    suggestions: ["जन धन खाता क्या है?", "पहले से बैंक खाता है", "आधार नहीं है"],
     overview:
       "जन धन बिना बैंक खाते वाले लोगों तक बुनियादी बैंकिंग पहुँचाने की योजना है। इस खाते में न्यूनतम बैलेंस रखने की शर्त नहीं है। खाता खोलने और सही कागज़ों की जाँच बैंक या बैंक मित्र करेगा। ऋण या बीमा का लाभ अपने आप मिलने की गारंटी नहीं है।",
   },
@@ -229,11 +219,7 @@ export const SCHEMES = {
         ["राशन", "परिवार", "ration", "family"],
       ),
     ],
-    suggestions: [
-      "विश्वकर्मा योजना क्या है?",
-      "मैं सिलाई का काम करती हूँ",
-      "पहले ऋण लिया है",
-    ],
+    suggestions: ["विश्वकर्मा योजना क्या है?", "मैं सिलाई का काम करती हूँ", "पहले ऋण लिया है"],
     overview:
       "पीएम विश्वकर्मा हाथ और औज़ार से पहले से काम कर रहे पारंपरिक कारीगरों की सहायता की योजना है। दर्जी सहित 18 काम इसमें आते हैं। पहचान, परिवार, पुराने ऋण और काम की शर्तें जाँची जाती हैं। पंजीकरण जन सेवा केंद्र से होता है; लाभ या ऋण की मंज़ूरी पक्की नहीं है।",
   },
@@ -285,9 +271,7 @@ export function schemeAssessment(id, answers = {}) {
       );
   } else {
     if (answers.adult === "no")
-      return stop(
-        "पीएम विश्वकर्मा में पंजीकरण के लिए उम्र कम से कम 18 साल होनी चाहिए।",
-      );
+      return stop("पीएम विश्वकर्मा में पंजीकरण के लिए उम्र कम से कम 18 साल होनी चाहिए।");
     if (answers.artisan === "no")
       return stop(
         "यह योजना पहले से काम कर रहे कारीगरों के लिए है। शुरुआती कौशल प्रशिक्षण का अलग रास्ता केंद्र से पूछें।",
@@ -338,8 +322,7 @@ export function schemeTeachback(id, text, knownIds = []) {
       .replace(/\u093c/g, "")
       .toLowerCase();
   const known = scheme.documents.filter(
-    (d) =>
-      knownIds.includes(d.id) || d.aliases.some((a) => normalized.includes(a)),
+    (d) => knownIds.includes(d.id) || d.aliases.some((a) => normalized.includes(a)),
   );
   const missing = scheme.documents.filter((d) => !known.includes(d));
   return `${known.length ? `आपने ${known.map((d) => d.title).join(", ")} बताया।` : "चलिए, कागज़ साथ में याद करते हैं।"} ${missing.length ? `यह भी याद रखें: ${missing.map((d) => d.title).join(", ")}।` : "मुख्य तैयारी आपने याद कर ली है।"} अंतिम जाँच ${scheme.authority} करेगा; यह आवेदन जमा होने की पुष्टि नहीं है।`;

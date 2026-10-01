@@ -1,0 +1,11 @@
+{
+  "name": "ApniBaat · अपनी बात",
+  "short_name": "ApniBaat",
+  "description": "सरकारी सेवाओं की तैयारी, आसान हिंदी में।",
+  "lang": "hi",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0e0b26",
+  "theme_color": "#2a1b8f",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

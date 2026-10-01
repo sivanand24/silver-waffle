@@ -11,9 +11,7 @@ export default function SelectScreen({ headingRef, onSelect, onSpeak }) {
         <br />
         <span>अपना रास्ता चुनिए।</span>
       </h1>
-      <p className="lead">
-        एक काम चुनें। मैं हर कदम आसान हिंदी में बताऊँगी।
-      </p>
+      <p className="lead">एक काम चुनें। मैं हर कदम आसान हिंदी में बताऊँगी।</p>
       <div className="scheme-picker">
         {Object.values(SCHEMES).map((item) => (
           <button key={item.id} onClick={() => onSelect(item.id)}>

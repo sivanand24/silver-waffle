@@ -10,21 +10,13 @@ import { getQuestions, schemeAssessment } from "../shared/schemes.js";
  *
  * @returns {{ answers: object, screen: "questions" | "assessment", questionIndex: number }}
  */
-export function answerQuestion({
-  scheme,
-  answers,
-  question,
-  value,
-  questionIndex,
-}) {
+export function answerQuestion({ scheme, answers, question, value, questionIndex }) {
   const nextAnswers = { ...answers, [question.id]: value };
   const fullIndex = scheme.questions.findIndex((q) => q.id === question.id);
-  for (const later of scheme.questions.slice(fullIndex + 1))
-    delete nextAnswers[later.id];
+  for (const later of scheme.questions.slice(fullIndex + 1)) delete nextAnswers[later.id];
 
   const blocked =
-    question.stopOn === value ||
-    schemeAssessment(scheme.id, nextAnswers).kind === "stop";
+    question.stopOn === value || schemeAssessment(scheme.id, nextAnswers).kind === "stop";
   const total = getQuestions(scheme.id, nextAnswers).length;
   const finished = blocked || questionIndex >= total - 1;
 

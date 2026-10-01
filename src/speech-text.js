@@ -1,11 +1,5 @@
 /** What the assistant says aloud for each screen. Pure, so it can be tested. */
-export function screenSpeech({
-  screen,
-  scheme,
-  question,
-  assessment,
-  summary,
-}) {
+export function screenSpeech({ screen, scheme, question, assessment, summary }) {
   switch (screen) {
     case "select":
       return "नमस्ते. अपनी बात में आपका स्वागत है. गैस कनेक्शन, बैंक खाता, या कारीगर सहायता में से एक चुनिए. हर रास्ते की जानकारी हिंदी में मिलेगी.";
