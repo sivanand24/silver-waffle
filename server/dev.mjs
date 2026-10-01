@@ -2,6 +2,7 @@ import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { resolve, extname, sep } from "node:path";
+import { gzipSync } from "node:zlib";
 import { handleGuide } from "../api/guide.mjs";
 import handleTranscribe from "../api/transcribe.mjs";
 
@@ -37,6 +38,7 @@ async function loadLocalEnv() {
   }
 }
 
+const gzipCache = new Map();
 export function createApiServer(options = {}) {
   return createServer(async (req, res) => {
     const path = (req.url || "").split("?")[0];
@@ -87,7 +89,15 @@ export function createApiServer(options = {}) {
           "Permissions-Policy",
           "camera=(), geolocation=(), microphone=(self)",
         );
-        res.end(req.method === "HEAD" ? undefined : content);
+        if (decoded.startsWith("/assets/"))
+          res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        let body = content;
+        if (/gzip/.test(req.headers["accept-encoding"] || "") && /text|javascript|svg/.test(types[extname(target)]) && content.length > 1024) {
+          body = gzipCache.get(target) || gzipCache.set(target, gzipSync(content)).get(target);
+          res.setHeader("Content-Encoding", "gzip");
+          res.setHeader("Vary", "Accept-Encoding");
+        }
+        res.end(req.method === "HEAD" ? undefined : body);
       } catch {
         res.statusCode = 404;
         res.end(JSON.stringify({ error: "यह पेज नहीं मिला।" }));

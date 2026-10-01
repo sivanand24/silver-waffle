@@ -15,6 +15,23 @@ export const DEFAULT_MODEL = "gemini-3.5-flash-lite";
 export const MAX_BODY_BYTES = 12000;
 const MAX_QUESTION_LENGTH = 1200;
 const buckets = new Map();
+let lastSweep = 0;
+// Identical questions (e.g. the suggestion chips) reuse the classified intent instead of paying for another model call.
+const INTENT_TTL_MS = 10 * 60 * 1000;
+const INTENT_CACHE_MAX = 200;
+const intentCache = new Map();
+function cachedIntent(key, now = Date.now()) {
+  const hit = intentCache.get(key);
+  if (!hit) return null;
+  intentCache.delete(key);
+  if (now - hit.at > INTENT_TTL_MS) return null;
+  intentCache.set(key, hit); // refresh LRU position
+  return hit;
+}
+function rememberIntent(key, intent, mentioned, now = Date.now()) {
+  intentCache.set(key, { intent, mentioned, at: now });
+  if (intentCache.size > INTENT_CACHE_MAX) intentCache.delete(intentCache.keys().next().value);
+}
 
 class RequestError extends Error {
   constructor(status, message) {
@@ -138,7 +155,13 @@ export async function answerQuestion(rawInput, options = {}) {
   let mode = "offline";
   // Gemini understands varied language; fixed, source-reviewed responses keep
   // benefit rules and official-submission boundaries independent of model output.
-  if (
+  const cacheKey = JSON.stringify(input);
+  const hit = key && intent !== "emergency" ? cachedIntent(cacheKey) : null;
+  if (hit) {
+    intent = hit.intent;
+    mentioned = [...hit.mentioned];
+    mode = "live";
+  } else if (
     key &&
     intent !== "emergency" &&
     !scopeMismatch(input.schemeId, input.question)
@@ -186,6 +209,7 @@ export async function answerQuestion(rawInput, options = {}) {
             DOCUMENT_KEYS.length,
           );
           mode = "live";
+          rememberIntent(cacheKey, intent, mentioned);
         }
       }
     } catch {
@@ -226,14 +250,19 @@ function checkOrigin(req) {
 }
 
 function rateAllowed(req, now = Date.now()) {
-  for (const [key, bucket] of buckets)
-    if (now - bucket.started >= 60000) buckets.delete(key);
+  // Sweep expired buckets at most once a second instead of scanning the whole map on every request.
+  if (now - lastSweep >= 1000) {
+    lastSweep = now;
+    for (const [key, bucket] of buckets)
+      if (now - bucket.started >= 60000) buckets.delete(key);
+  }
   if (buckets.size > 1000) return false;
   const forwarded = process.env.VERCEL
     ? req.headers["x-forwarded-for"]?.split(",")[0]?.trim()
     : undefined;
   const key = forwarded || req.socket?.remoteAddress || "local";
-  const bucket = buckets.get(key) || { started: now, count: 0 };
+  let bucket = buckets.get(key);
+  if (!bucket || now - bucket.started >= 60000) bucket = { started: now, count: 0 };
   bucket.count += 1;
   buckets.set(key, bucket);
   return bucket.count <= 30;

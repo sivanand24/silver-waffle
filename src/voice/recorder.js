@@ -257,10 +257,10 @@ export function createVoiceRecorder({
             ) * 5,
           );
         }
-        emit({
-          level,
-          seconds: Math.min(20, Math.floor((Date.now() - s.started) / 1000)),
-        });
+        // Quantise the meter and skip identical frames so React is not re-rendered 10x/s for nothing.
+        level = Math.round(level * 12) / 12;
+        const seconds = Math.min(20, Math.floor((Date.now() - s.started) / 1000));
+        if (level !== state.level || seconds !== state.seconds) emit({ level, seconds });
       }, 100);
       s.stopTimer = setTimer(stop, durationMs);
     } catch (error) {
