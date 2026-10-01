@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { answerQuestion, validateBody, buildGeminiRequest, DEFAULT_MODEL } from '../api/guide.mjs';
-import { SOURCE_URL, SYSTEM_INSTRUCTION } from './knowledge.mjs';
+import { SOURCE_URL, SYSTEM_INSTRUCTION, answerForIntent } from './knowledge.mjs';
 import { createApiServer } from './dev.mjs';
 
 test('rejects empty, oversized and nested untrusted context', () => {
@@ -81,6 +81,7 @@ test('upstream failures and unknown model intents gracefully use offline mode', 
 });
 
 test('teach-back notices missing papers without inventing a submitted application', async () => {
+  assert.doesNotMatch(answerForIntent('teachback', {}, ['identity', 'form', 'mobile']), /undefined/);
   const response = await answerQuestion({ question: 'मैं आधार और बैंक की किताब लेकर जाऊँगी', context: { step: 'teachback' } }, { env: {} });
   assert.match(response.answer, /आपने/);
   assert.match(response.answer, /राशन कार्ड/);
