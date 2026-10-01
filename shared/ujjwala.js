@@ -25,7 +25,7 @@ export function getDocumentSummary(documents) {
   return { ready: DOCUMENTS.filter(d => documents[d.id] === 'ready'), remaining: DOCUMENTS.filter(d => documents[d.id] !== 'ready') };
 }
 export function speechChoice(text) {
-  const value = text.trim().toLowerCase();
+  const value = text.toLowerCase().replace(/[،,!?।.]+/gu, ' ').replace(/\s+/gu, ' ').trim();
   if (/पता नहीं|मालूम नहीं|शायद|नहीं जान|not sure|don't know|dont know/.test(value)) return 'unknown';
   if (/^(नहीं|नही|ना|न|no|nahin|nahi)([।.!\s]|$)/.test(value) || /नहीं है|नही है/.test(value)) return 'no';
   if (/^(हाँ|हां|जी हाँ|जी हां|yes|haan|han|ha)([।.!\s]|$)/.test(value)) return 'yes';

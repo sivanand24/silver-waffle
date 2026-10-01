@@ -1,4 +1,6 @@
-import { SOURCE_URL, SYSTEM_INSTRUCTION, INTENTS, DOCUMENT_KEYS, inferIntent, mentionedDocuments, answerForIntent } from '../server/knowledge.mjs';
+import { INTENTS, DOCUMENT_KEYS, mentionedDocuments } from '../server/knowledge.mjs';
+import { getScheme } from '../shared/schemes.js';
+import { scopeMismatch, schemeIntent, schemePrompt, scopedAnswer } from '../server/scheme-answers.mjs';
 
 export const DEFAULT_MODEL = 'gemini-3.5-flash-lite';
 export const MAX_BODY_BYTES = 12000;
@@ -28,6 +30,8 @@ export function validateBody(body) {
     throw new RequestError(400, 'एक छोटा सवाल लिखें या बोलें।');
   }
   if (body.context !== undefined && !record(body.context)) throw new RequestError(400, 'सवाल दोबारा भेजें।');
+  const schemeId = body.schemeId ?? 'ujjwala';
+  if(typeof schemeId !== 'string' || !getScheme(schemeId)) throw new RequestError(400,'सही सहायता का विकल्प चुनें।');
   const context = body.context || {};
   if (context.step !== undefined && (typeof context.step !== 'string' || context.step.length > 60)) throw new RequestError(400, 'सवाल दोबारा भेजें।');
   let documents;
@@ -35,7 +39,7 @@ export function validateBody(body) {
     if (context.documents.length > 25 || context.documents.some((v) => typeof v !== 'string' || v.length > 60)) throw new RequestError(400, 'सवाल दोबारा भेजें।');
     documents = context.documents.slice();
   } else documents = cleanMap(context.documents, 'documents');
-  return { question: body.question.trim(), context: { step: context.step || '', answers: cleanMap(context.answers, 'answers'), documents } };
+  return { schemeId, question: body.question.trim(), context: { step: context.step || '', answers: cleanMap(context.answers, 'answers'), documents } };
 }
 
 // Only the user's short question and bounded preparation context go to Gemini.
@@ -47,7 +51,7 @@ function redactIdentifiers(text) {
 
 export function buildGeminiRequest(input) {
   return {
-    systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
+    systemInstruction: { parts: [{ text: schemePrompt(input.schemeId || 'ujjwala') }] },
     contents: [{ role: 'user', parts: [{ text: redactIdentifiers(JSON.stringify(input)) }] }],
     generationConfig: {
       responseMimeType: 'application/json',
@@ -68,12 +72,12 @@ export async function answerQuestion(rawInput, options = {}) {
   const input = validateBody(rawInput);
   const env = options.env || process.env;
   const key = env.GEMINI_API_KEY?.trim();
-  let intent = inferIntent(input.question, input.context);
+  let intent = schemeIntent(input.schemeId,input.question,input.context);
   let mentioned = mentionedDocuments(input.question);
   let mode = 'offline';
   // Gemini understands varied language; fixed, source-reviewed responses keep
   // benefit rules and official-submission boundaries independent of model output.
-  if (key && intent !== 'emergency') {
+  if (key && intent !== 'emergency' && !scopeMismatch(input.schemeId,input.question)) {
     const candidate = env.GEMINI_MODEL?.trim() || DEFAULT_MODEL;
     const model = /^gemini-[a-z0-9.-]{1,80}$/.test(candidate) ? candidate : DEFAULT_MODEL;
     const controller = new AbortController();
@@ -96,7 +100,7 @@ export async function answerQuestion(rawInput, options = {}) {
     } catch { /* Do not expose upstream messages, request details, or credentials. */ }
     finally { clearTimeout(timeout); }
   }
-  return { answer: answerForIntent(intent, input.context, mentioned), mode, sourceUrl: SOURCE_URL };
+  return { answer: scopedAnswer(input.schemeId,intent,input.context,mentioned,input.question), mode, sourceUrl: getScheme(input.schemeId).source };
 }
 
 function send(res, status, value) {

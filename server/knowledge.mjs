@@ -17,9 +17,9 @@ export const FACTS = Object.freeze([
 
 export const INTENTS = Object.freeze([
   'greeting', 'overview', 'eligibility', 'documents', 'aadhaar', 'ration', 'bank',
-  'migrant', 'cost', 'apply', 'status', 'teachback', 'current_step', 'emergency', 'unknown',
+  'migrant', 'cost', 'loans', 'apply', 'status', 'teachback', 'current_step', 'emergency', 'unknown',
 ]);
-export const DOCUMENT_KEYS = Object.freeze(['aadhaar', 'family', 'bank', 'declaration', 'photo', 'address']);
+export const DOCUMENT_KEYS = Object.freeze(['aadhaar', 'family', 'bank', 'declaration', 'photo', 'address', 'identity', 'form', 'mobile']);
 
 const DOCUMENT_LABELS = Object.freeze({
   aadhaar: 'अपना और परिवार के वयस्क सदस्यों का आधार',
@@ -91,7 +91,7 @@ export function answerForIntent(intent, context = {}, mentioned = []) {
     return 'आवेदन करने वाली महिला की उम्र कम से कम 18 साल होनी चाहिए और घर में पहले से गैस कनेक्शन नहीं होना चाहिए। गरीब परिवार होने की निर्धारित घोषणा भी देनी होती है। अंतिम जाँच गैस एजेंसी करेगी; यह बातचीत मंज़ूरी नहीं है।';
   }
   if (intent === 'teachback') {
-    const known = [...new Set(mentioned)].filter((key) => DOCUMENT_KEYS.includes(key));
+    const known = [...new Set(mentioned.map(key => ({ identity: 'aadhaar', form: 'photo' })[key] || key))].filter((key) => Object.hasOwn(DOCUMENT_LABELS, key));
     const missing = ['aadhaar', 'family', 'bank', 'declaration'].filter((key) => !known.includes(key));
     const opening = known.length ? `आपने ${known.map((key) => key === 'aadhaar' ? 'आधार' : DOCUMENT_LABELS[key]).join(', ')} बताया।` : 'चलिए कागज़ एक बार साथ में याद कर लेते हैं।';
     const reminder = missing.length ? `यह भी याद रखें: ${missing.map((key) => DOCUMENT_LABELS[key]).join(', ')}।` : 'ज़रूरी मुख्य कागज़ आपने याद कर लिए हैं।';

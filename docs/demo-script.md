@@ -1,84 +1,58 @@
-# ApniBaat: 90-second jury demo
+# ApniBaat — jury demo and submission
 
-## Before walking on stage
+## Before the pitch
 
-Open the deployed app on the demo device. Test audio once, grant microphone permission if using it, and reset the journey. Keep this script and the public URL available. Use fictional details; never enter real identity or bank numbers.
+Use the updated public HTTPS site in Edge. Revoke the exposed API key and configure its replacement privately. Test actual spoken Hindi: **हाँ**, **नहीं**, **मेरे पास राशन कार्ड नहीं है**. Confirm visible text, not just a moving microphone. Keep a button/text demonstration ready.
 
-## The demonstration
+## 90-second demo
 
-| Time | Say / do |
-|---|---|
-| 0–15 sec | **“Imagine a woman who wants an LPG connection but cannot read an English website and has nobody to guide her. ApniBaat helps her understand the next step in Hindi, one question at a time.”** |
-| 15–30 sec | Press **हाँ, मदद चाहिए**. Answer the four questions **हाँ → नहीं → नहीं → हाँ**. Say: **“She can tap a clear answer or use supported voice input. She can also type questions in the help panel.”** |
-| 30–45 sec | Press **मेरे कागज़ देखें**. Mark the document statuses using the example below, then press **मेरी तैयारी की सूची बनाएँ**. Say: **“She only tells us which papers she has. We never ask her to upload identity documents.”** |
-| 45–60 sec | Show the ready/remaining counts and press **मेरी सूची सेव करें**. Say: **“She leaves with a checklist and a clear next step. Her application has not been submitted or approved.”** |
-| 60–80 sec | Press **चलें, एक बार आप बताइए?** Type **“मैं आधार और बैंक की पासबुक ले जाऊँगी।”** and press **मेरा जवाब देखें**. Show the reminders for the omitted main document groups. If the response says **अपनी बात का जवाब**, say: **“Gemini recognizes what she means, and ApniBaat uses reviewed Hindi guidance to help her remember the rest.”** If it says **सहेजी गई जानकारी**, use the fallback wording below. |
-| 80–90 sec | **“The next step is an official application and distributor verification, including required biometric e-KYC. Our prototype focuses on one service and one language, so we can demonstrate a complete guidance journey.”** |
+1. **0–15 seconds:** “Our vertical is The Invisible Woman. ApniBaat helps a first-time woman user understand a government-service next step in Hindi. Three needs, one simple interface.” Show gas, bank and artisan choices.
+2. **15–35 seconds:** Choose **गैस कनेक्शन**, then **हाँ, मदद चाहिए**. Record **हाँ**, stop recording, show the transcript and press **सही है**. Answer the remaining questions **नहीं → नहीं → हाँ** with buttons.
+3. **35–50 seconds:** Choose **मेरे कागज़ देखें**. Mark Aadhaar and bank papers **है**, leave the rest missing/uncertain, and create the list. Show **2 ready / 4 remaining** and save it.
+4. **50–70 seconds:** Open **चलें, एक बार आप बताइए?** and say or type **मैं आधार और बैंक की पासबुक ले जाऊँगी।** Show the missing-document reminders. Only call it live AI if the actual response indicates live processing.
+5. **70–90 seconds:** Show **दूसरी सहायता चुनें**, confirm, and open **बैंक खाता**. Answer adult **हाँ**, existing account **हाँ**. Demonstrate that it changes the advice rather than encouraging another account. “The same engine applies separate reviewed rules for each service. Official institutions make the final decision.”
 
-## Exact example answers
+## Optional artisan demonstration
 
-Use these actual button labels. For microphone input, say the short answer **हाँ** or **नहीं**; do not enter an age number.
+Choose **कारीगर सहायता**. Example: adult yes, existing artisan yes, covered trade yes (tailor), registered family member no, government job no, previous similar loan yes. The extra question appears: only fully repaid MUDRA/SVANidhi? Choose yes to show the exception; final official verification is still required. Unknown answers must show a verification step.
 
-1. **क्या आपकी उम्र 18 साल या उससे ज़्यादा है?** → **हाँ**.
-2. Existing household cylinder connection → **नहीं**.
-3. Existing piped cooking gas → **नहीं**.
-4. Learn to prepare the family declaration → **हाँ**. This is willingness to understand the document, not a submitted declaration.
+## Honest fallback wording
 
-Press **मेरे कागज़ देखें**, then use:
+- Missing key/network: “Live transcription is unavailable in this run. The same guidance works with Hindi buttons and typed questions.”
+- Saved guide answer: “This is reviewed saved information, not a live AI response.”
+- Local preview: “This is the local production build.” Never call it a deployed site.
+- Official handoff: “This prepares her next step; no application has been submitted.”
 
-| Document | Demo status |
-|---|---|
-| आधार की प्रतियाँ | है |
-| परिवार का कागज़ | नहीं है |
-| बैंक का कागज़ | है |
-| रहने के पते का सबूत | पता नहीं |
-| आवेदन का फॉर्म और फोटो | नहीं है |
-| परिवार की स्थिति का घोषणा-पत्र | नहीं है |
+## Evaluation talking points
 
-The result should show **2 कागज़ तैयार** and **4 तैयारी / जाँच बाकी**. The downloaded file is **ApniBaat-Ujjwala-Checklist.txt**.
+- **Logic:** unknown states preserved; duplicate-account guidance avoided; artisan loan exceptions asked conditionally.
+- **Security:** API keys stay server-side; audio is temporary in the app; no identity numbers or document uploads requested.
+- **Efficiency:** short recordings, one transcription request after stop, cancelled sessions release microphone and discard late replies.
+- **Maintainability/testing:** shared scheme configuration, separate recording controller, 36 automated tests including lifecycle races and scheme isolation.
+- **Accessibility:** Hindi, large labeled controls, transcript confirmation, keyboard navigation, reduced motion, and text/button alternatives.
+- **Limits:** no government integration, no approval promise, no user study yet; provider audio processing requires internet and valid quota.
 
-The practice answer **“मैं आधार और बैंक की पासबुक ले जाऊँगी।”** mentions two groups. ApniBaat should also remind her about the family document and declaration, with further preparation details. If there is time after the main demo, open **मदद चाहिए** and choose **कौन से कागज़ चाहिए?**.
+## Submission checklist
 
-Present this as a fictional example. Readiness is not final eligibility; the official declaration and verification still apply.
+- [ ] Repository is public: https://github.com/sivanand24/silver-waffle
+- [ ] All finished code committed and pushed on **main** only.
+- [ ] README covers vertical, approach, logic, operation, assumptions and validation.
+- [ ] Updated deployment verified: https://silver-waffle-eta.vercel.app
+- [ ] Real microphone test passed in Edge with replacement key.
+- [ ] LinkedIn post published; copy its URL into the event submission.
+- [ ] Check organizer's submission document/form and deadline. The shared Google document was not accessible through the assistant's web tool; pasted requirements were used.
 
-## If something fails
+## LinkedIn draft (not published)
 
-- **Microphone or Hindi voice unavailable:** switch immediately to the answer buttons or type the Hindi question. Say, **“This device's voice service is unavailable; the same journey works through simple choices.”**
-- **Gemini unavailable, missing key, or quota exhausted:** use the saved guidance and say, **“This answer is saved scheme information. The live AI connection is unavailable in this run.”** Never call this a live Gemini result.
-- **Venue connection drops:** use the already-running local version if available. Say it is local. Do not imply that the public deployment or live AI is working until tested.
-- **Official site needs a separate process:** show the handoff and explain it. Do not imply that ApniBaat submits an application, verifies identity, or completes e-KYC.
+Today at HackArena 2026, I built ApniBaat / अपनी बात for “The Invisible Woman.”
 
-## Likely jury questions
+The prototype helps a first-time woman user prepare for an essential service in Hindi: an Ujjwala gas connection, a Jan Dhan bank account, or PM Vishwakarma support for existing artisans.
 
-**What does AI add?** Gemini classifies varied questions and recognizes document groups in the user's own words. The app uses that result to select reviewed Hindi guidance and practice reminders. Benefit rules are fixed in reviewed content. Without Gemini, local matching supplies clearly labeled saved guidance.
+It combines simple questions, document checklists, official next steps, and an understanding check. Gemini interprets questions and can transcribe recorded Hindi; reviewed rules keep the guidance grounded. Buttons and typing remain available when voice or connectivity fails.
 
-**Why one scheme?** Four hours is enough to demonstrate one focused journey. More services and languages need verified content, testing, and feedback from the people who would use them.
+This is an independent preparation guide, not a government application or approval service. My next step is usability testing with first-time users.
 
-**Have you measured impact?** No user study has been completed. The prototype demonstrates the flow; usability and completion rates need testing with first-time users.
-
-**Where does the user's information go?** No Aadhaar or bank numbers are requested. AI questions and relevant readiness answers go through the server to Gemini. Voice recognition may use the browser provider's speech service.
-
-## Required submissions
-
-- [ ] Public deployed URL: **[ADD VERIFIED URL]**. Test in a private browser window and on a phone.
-- [ ] GitHub: **https://github.com/sivanand24/silver-waffle**. Confirm the final code is visible to judges on the submitted branch.
-- [ ] LinkedIn post URL: **[ADD AFTER PUBLISHING]**.
-- [ ] Confirm the organizer's submission form and deadline; the event announcement requires all three items above.
-
-## LinkedIn draft
-
-Replace the deployed link and verify every feature against the final build before posting. This is a draft, not a published submission.
-
-Today at HackArena 2026, I built **ApniBaat / अपनी बात** for the challenge “The Invisible Woman.”
-
-The idea: help a first-time woman user understand the next step toward a PMUY LPG connection through a simple Hindi journey.
-
-The prototype combines one-question-at-a-time guidance, a downloadable document checklist, official application links, and a practice step where the user explains what she will take. Optional Gemini integration interprets her questions and document descriptions, while the app returns reviewed Hindi guidance. Voice features are available on supported browsers, with buttons and text as alternatives.
-
-ApniBaat is an independent prototype. It does not submit applications or guarantee eligibility; official verification remains with the distributor. My next step would be testing the experience with first-time users and improving it from their feedback.
-
-Try it: [ADD VERIFIED DEPLOYED URL]
-
+Demo: [INSERT VERIFIED UPDATED URL]
 Code: https://github.com/sivanand24/silver-waffle
 
-#HackArena2026 #BuildWithAI #DigitalInclusion #Gemini #WomenInTech
+#HackArena2026 #BuildWithAI #DigitalInclusion #Gemini

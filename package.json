@@ -9,7 +9,8 @@
     "dev:api": "node --env-file-if-exists=.env.local server/dev.mjs",
     "build": "vite build --configLoader native",
     "preview": "vite preview --host 127.0.0.1 --configLoader native",
-    "test": "node --test server/guide.test.mjs src/flow.test.mjs"
+    "demo": "node server/dev.mjs --serve-dist",
+    "test": "node --test server/guide.test.mjs server/transcribe.test.mjs src/flow.test.mjs src/voice/recorder.test.mjs shared/schemes.test.mjs"
   },
   "dependencies": { "react": "^19.1.1", "react-dom": "^19.1.1", "lucide-react": "^0.468.0" },
   "devDependencies": { "vite": "^7.1.7", "@vitejs/plugin-react": "^5.0.3" }

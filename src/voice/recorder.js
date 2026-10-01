@@ -18,9 +18,10 @@ export function createVoiceRecorder({ onChange, getUserMedia, Recorder, AudioCon
   const emit = patch => { state = { ...state, ...patch }; onChange?.(state); };
   const owns = s => active === s && version === s.id;
   function release(s) {
-    if (!s || s.released) return;
-    s.released = true;
+    if (!s) return;
     clearTimer(s.permissionTimer); clearTimer(s.stopTimer); clearTimer(s.requestTimer); clearTicker(s.ticker);
+    if (s.released) return;
+    s.released = true;
     s.stream?.getTracks().forEach(t => { t.onended = null; t.stop(); });
     s.audio?.close()?.catch?.(() => {});
   }

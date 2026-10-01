@@ -59,7 +59,7 @@ export const SCHEMES = {
   }
 };
 export const TRADES = ['बढ़ई','नाव बनाने वाले','अस्त्र बनाने वाले','लोहार','हथौड़ा / औज़ार बनाने वाले','ताला बनाने वाले','सुनार','कुम्हार','मूर्तिकार / पत्थर का काम','मोची','राजमिस्त्री','टोकरी / चटाई / झाड़ू / नारियल रेशा बुनने वाले','पारंपरिक गुड़िया / खिलौने बनाने वाले','नाई','माला बनाने वाले','धोबी','दर्जी','मछली पकड़ने का जाल बनाने वाले'];
-export function getScheme(id='ujjwala'){return SCHEMES[id]||null;}
+export function getScheme(id='ujjwala'){return Object.hasOwn(SCHEMES,id)?SCHEMES[id]:null;}
 export function getQuestions(id,answers={}){return getScheme(id).questions.filter(q=>!q.when||q.when(answers));}
 export function schemeAssessment(id,answers={}) {
   const scheme=getScheme(id);

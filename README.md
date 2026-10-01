@@ -1,82 +1,111 @@
 # ApniBaat · अपनी बात
 
-A Hindi guide that helps a first-time woman user understand her next step toward a Pradhan Mantri Ujjwala Yojana (PMUY) LPG connection. Built for **HackArena 2026 — The Invisible Woman**.
+**HackArena 2026 vertical: The Invisible Woman.** A Hindi assistant for a first-time woman user with no English or prior digital knowledge. She chooses one practical task, answers simple questions, understands her documents, and leaves with a clear official next step.
 
-The prototype focuses on one journey: answer a few simple questions, prepare the required documents, and continue through an official application channel. It is an independent project, not a government service.
+Repository: https://github.com/sivanand24/silver-waffle
 
-## What the demo does
+Existing deployment: https://silver-waffle-eta.vercel.app — the new version must be deployed and verified before submission.
 
-- Guides the user in Hindi, one question at a time, through adult age, existing household LPG/PNG connections, and preparation for the poverty declaration. Answers are **हाँ / नहीं / पता नहीं**.
-- Offers large answer buttons, simple text questions in the help panel, and browser voice features where supported.
-- Builds a document-readiness checklist with **है / नहीं है / पता नहीं**, saves it as a text file, and shows an official next step.
-- Includes a practice step: the user describes which documents she will take, and ApniBaat reminds her of any main document groups she did not mention.
-- Uses Gemini to understand the question and identify mentioned documents when configured. The server selects source-reviewed Hindi answers; Gemini does not generate new benefit rules. If Gemini is unavailable, local matching selects saved guidance and the response is labeled accordingly.
-- Does not ask for Aadhaar numbers, bank-account numbers, or document uploads.
+Submission branch: **main**. Keep all progress on this branch.
 
-This is a readiness guide, **not an eligibility decision or submitted application**. The distributor verifies the application; required biometric e-KYC and other checks take place through the official process. See the [PMUY scheme page](https://www.pmuy.gov.in/ujjwala2.html) and [official FAQ](https://www.pmuy.gov.in/faq.html).
+## Approach and decision logic
 
-## Run locally
+Three focused journeys share the same accessible interface:
 
-Use Node.js 20.19+ or 22.12+ and npm. From the project folder:
+| Need | Journey | Context that changes guidance |
+|---|---|---|
+| Gas connection | PM Ujjwala | Adult age, existing household LPG/PNG, document readiness |
+| Bank account | Jan Dhan | Adult journey versus guardian guidance; existing-account holders avoid duplicate-account guidance |
+| Artisan support | PM Vishwakarma | Existing artisan work, one of 18 trades, family registration, government employment, previous loans and the fully repaid MUDRA/SVANidhi exception |
+
+Unknown answers stay unknown. They produce a verification step, not a guessed yes/no. Each scheme owns its questions, checklist, official sources, next steps, and practice exercise. Switching clears the active journey only after confirmation. Returning to an earlier question and changing it invalidates later answers.
+
+**AI has two real roles:** Gemini transcribes recorded Hindi/Hinglish into visible, editable text; it also classifies varied questions and identifies documents in a teach-back response. Reviewed content and deterministic rules control scheme guidance. The model cannot create new benefit rules or declare approval. Explicit questions about another scheme ask the user to switch rather than silently mixing rules.
+
+## Microphone interaction
+
+Press the microphone, grant access, speak, then press **बोल लिया — अब रोकें**. Recording stops automatically after 20 seconds. The app shows permission, recording, microphone level, transcription, and review states. On a journey question, review **आपने कहा…**, edit if necessary, and press **सही है**. In the help dialog, the transcription fills the editable question box.
+
+This uses MediaRecorder and a server-side Gemini call, **not browser SpeechRecognition**. Old permission results, recordings, and network responses are ignored after cancellation/navigation. Tracks are stopped after recording. Silence, denied permission, missing hardware, timeouts, and unavailable AI produce explicit Hindi errors. Buttons and typing remain available.
+
+## Run and test
+
+Node.js 20.19+ or 22.12+, npm:
 
 ```powershell
 npm install
-npm run dev
-```
-
-Open the local address printed in the terminal. `npm run dev` starts both the Vite frontend and the local API. Leave that terminal running.
-
-```powershell
 npm test
 npm run build
+npm run demo
 ```
 
-The app is React + Vite. The local Node API and Vercel's `api/guide.mjs` use the same guide logic. `npm run preview` previews the frontend build only; use the development command or a Vercel deployment to test the API too.
+Open **http://127.0.0.1:8787**. The demo server serves the production build **and** API routes. It avoids development dependency-optimizer issues in restricted Windows environments. For live editing use `npm run dev` (frontend 5173, API 8787). `npm run preview` alone is frontend-only.
 
-## Enable Gemini privately
+If the Windows sandbox reports ancestor-path EPERM, set `$env:NODE_OPTIONS='--preserve-symlinks --preserve-symlinks-main'` for that terminal. The Vite configuration preserves symlink paths and uses the native config loader.
 
-1. Sign in to [Google AI Studio](https://aistudio.google.com/api-keys) with your own Google account.
-2. Create an API key in an available project. If your existing Cloud project is missing, import it in AI Studio's Projects view first. Complete account prompts yourself.
-3. Put the key in `.env.local` in the project root:
+## Private Gemini configuration
+
+Create a key at https://aistudio.google.com/apikey. **Revoke any key posted in chat, comments, or screenshots.** Store the replacement only in ignored `.env.local` or your hosting provider's server environment:
 
 ```dotenv
-GEMINI_API_KEY=your_private_key_here
+GEMINI_API_KEY=your_replacement_private_key
 GEMINI_MODEL=gemini-3.5-flash-lite
+GEMINI_AUDIO_MODEL=gemini-3.5-flash-lite
+API_PORT=8787
 ```
 
-4. Restart `npm run dev`. Open **मदद चाहिए**, ask **“कौन से कागज़ चाहिए?”**, and check the response label: **अपनी बात का जवाब** means a successful Gemini classification; **सहेजी गई जानकारी** is the fallback. The dialog header alone does not prove a successful live request.
+Restart the server after changing configuration. Model access and quota depend on your account. No `VITE_` prefix is used for secrets. Missing/failed AI classification returns explicitly labeled saved guidance; **failed transcription never returns a fabricated transcript**. Health checks report configuration presence, not successful provider access.
 
-Keep the key out of chat, screenshots, Git, and browser code. Do not use a `VITE_` prefix for it. `.env.local` is ignored by Git; the server reads the secret. Model access and quota depend on your account. [Google's key setup and security guide](https://ai.google.dev/gemini-api/docs/api-key).
+## Code structure and API
 
-When AI is used, the question and relevant readiness answers are sent through the server to Gemini. Browser speech recognition may use the browser provider's speech service. Use invented, non-sensitive demo answers.
+- `shared/`: scheme data, conditional questions, assessment rules and checklist logic. The original Ujjwala exports remain compatible.
+- `src/voice/recorder.js`: independently tested recording lifecycle and cancellation ownership.
+- `src/App.jsx`: Hindi journey interface; existing styles and ApniBaat theme are preserved.
+- `server/`: reviewed answers, intent mapping, local production/API server, backend tests.
+- `api/`: the same handlers used by Vercel server functions.
 
-## Deploy to Vercel
+| Endpoint | Input | Output |
+|---|---|---|
+| POST /api/guide | question, schemeId, context | answer, mode (live/offline), sourceUrl |
+| POST /api/transcribe | audioBase64, mimeType | transcript; otherwise a structured error |
+| GET /api/health | none | geminiConfigured (presence only) |
 
-1. Make sure the final code is available in [sivanand24/silver-waffle](https://github.com/sivanand24/silver-waffle) on branch `codex/saheli-hackarena`.
-2. In Vercel, create a project by importing that repository. Use **Vite**, root directory **`.`**, build command **`npm run build`**, and output directory **`dist`**. The included configuration supplies these build settings.
-3. Set the project's Production Branch to `codex/saheli-hackarena`, or deploy that branch and promote the verified deployment to production.
-4. Add `GEMINI_API_KEY` and `GEMINI_MODEL` in the project's environment variables for Production; add them to Preview too if testing a preview. Use the model value shown above. Redeploy after changing variables.
-5. Open the public HTTPS link in a private window. Check the whole flow and AI response without your account being signed in. Resolve any deployment access protection before submitting the URL.
+Guide requests without schemeId default to Ujjwala for compatibility. Unknown scheme IDs are rejected. Audio is capped at **2 MB decoded**, with MIME/container validation, an 18-second upstream timeout, and a 12-request/minute per-instance IP limit. Guide requests have separate size and rate limits. Limits use instance memory: production at scale needs a shared rate-limit store.
 
-Do not upload only `dist` to a static host and expect Gemini to work: the `/api/guide` server endpoint is required. Deployment references: [GitHub integration](https://vercel.com/docs/git/vercel-for-github), [environment variables](https://vercel.com/docs/environment-variables).
+## Evaluation focus
 
-## Demo verification
+| Criterion | Evidence |
+|---|---|
+| Smart, dynamic assistant | Hindi audio transcription, reviewed intent classification, teach-back, contextual/conditional questions |
+| Code quality | Shared scheme records; isolated recording controller; reusable local/deployed handlers; explicit tests |
+| Security | Server-only keys, bounded audio and inputs, same-origin checks, safe error messages, no identity-document uploads |
+| Efficiency | One short audio request after stopping; 20-second cap; 64 kbps recording; 10 Hz meter updates; cancellation releases resources |
+| Testing | Automated flow, scheme-isolation, HTTP, mocked Gemini, recording race, permission, silence and timeout checks |
+| Accessibility | Hindi page language, large labeled controls, editable transcripts, keyboard dialogs, focus restoration, reduced-motion support, text alternatives |
 
-At documentation handoff, **live Gemini credentials, microphone input, and the public deployment remain unverified**. Before pitching:
+No app database is used. Application code does not persist audio, transcripts or answers, and does not log them. Audio and questions go through the server to Google when AI is used; Google's service policies still apply. Avoid personal details in demo speech. Numeric identifiers in text questions are masked before classification. Audio cannot be redacted before the transcription provider receives it, so the UI explicitly warns against speaking private numbers.
 
-- Run the tests and production build successfully.
-- Complete the Hindi journey on the actual demo device.
-- Try the microphone and Hindi playback; keep the buttons/text path ready if device support or permissions fail.
-- Verify a successful live AI classification and its response label after setting the key.
-- On the result screen, try **चलें, एक बार आप बताइए?** with **“मैं आधार और बैंक की पासबुक ले जाऊँगी।”** and check the document reminders.
-- Open official links -> https://silver-waffle-eta.vercel.app, reload the deployed app, and test it on a phone.
+## Deployment
 
-## Live Link
-https://silver-waffle-eta.vercel.app
-  
+1. Commit and push the completed code to **main** in the public repository.
+2. Import the repository into Vercel or use its existing project. Framework **Vite**, root **.**, build **npm run build**, output **dist**, production branch **main**.
+3. Configure the replacement GEMINI_API_KEY and model variables on the server. Redeploy after changing variables. Never publish the exposed key.
+4. Test the HTTPS URL in a private Edge window. Confirm it works without the developer's account or deployment protection.
+5. Test both /api/guide and real Hindi speech via /api/transcribe. A static-only upload of dist does not provide these APIs.
 
-## Sources and boundaries
+## Sources, assumptions and limits
 
-Scheme guidance is based on the [official Ujjwala 2.0 page](https://www.pmuy.gov.in/ujjwala2.html) and [PMUY FAQ](https://www.pmuy.gov.in/faq.html), checked for this prototype on 1 October 2026. The FAQ covers distributor biometric e-KYC, pre-installation inspection, and the restriction concerning existing PNG connections. Refer to the official channel for current rules and final verification.
+Content reviewed for this prototype on **1 October 2026**:
 
-This prototype has not been evaluated with first-time users. Voice support varies by device, and no claim of full offline operation, guaranteed benefit approval, or completed government integration is made.
+- Ujjwala: https://www.pmuy.gov.in/ujjwala2.html and https://www.pmuy.gov.in/faq.html
+- Jan Dhan: https://financialservices.gov.in/pradhan-mantri-jan-dhan-yojana-pmjdy and https://www.pmjdy.gov.in/hi-scheme
+- Bank KYC context: https://sbi.bank.in/web/personal-banking/accounts/saving-account/savings-bank-rulesabridged
+- PM Vishwakarma: https://pmvishwakarma.gov.in/ and official overview https://www.pib.gov.in/PressNoteDetails.aspx?ModuleId=3&NoteId=155216&lang=2
+- Detailed artisan guidance: https://www.dcmsme.gov.in/PMV-Ebook/PMV.pdf
+- Gemini audio: https://ai.google.dev/gemini-api/docs/audio
+
+The app is an independent **preparation and understanding guide**. It does not submit government applications, open accounts, authenticate Aadhaar, approve loans, confirm eligibility, or guarantee local scheme availability. Distributor/bank/CSC verification remains necessary. PM Vishwakarma is for existing eligible artisans, not guaranteed beginner training. Jan Dhan credit/insurance benefits are not promised. Scheme changes require content review; there is no automatic government integration.
+
+**Verification status:** 36 automated tests and the production build passed during implementation. These tests mock Gemini and microphone hardware; they do not establish live transcription quality. Final real spoken Edge verification and the updated public deployment remain pending until a replacement key and account access are ready. No user study or measured social-impact claim is made.
+
+Submission checklist and 90-second pitch: [docs/demo-script.md](docs/demo-script.md).
