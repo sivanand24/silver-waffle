@@ -150,7 +150,7 @@ export async function handleGuide(req, res, options = {}) {
       res.setHeader('Allow', 'POST');
       return send(res, 405, { error: 'यहाँ अपना सवाल भेजें।' });
     }
-    if (!checkOrigin(req)) return send(res, 403, { error: 'सहेली के पेज से सवाल भेजें।' });
+    if (!checkOrigin(req)) return send(res, 403, { error: 'अपनी बात के पेज से सवाल भेजें।' });
     if (!rateAllowed(req)) {
       res.setHeader('Retry-After', '60');
       return send(res, 429, { error: 'कुछ पल रुककर फिर सवाल पूछें।' });

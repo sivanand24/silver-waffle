@@ -1,4 +1,4 @@
-# सहेली · Saheli
+# ApniBaat · अपनी बात
 
 A Hindi guide that helps a first-time woman user understand her next step toward a Pradhan Mantri Ujjwala Yojana (PMUY) LPG connection. Built for **HackArena 2026 — The Invisible Woman**.
 
@@ -9,7 +9,7 @@ The prototype focuses on one journey: answer a few simple questions, prepare the
 - Guides the user in Hindi, one question at a time, through adult age, existing household LPG/PNG connections, and preparation for the poverty declaration. Answers are **हाँ / नहीं / पता नहीं**.
 - Offers large answer buttons, simple text questions in the help panel, and browser voice features where supported.
 - Builds a document-readiness checklist with **है / नहीं है / पता नहीं**, saves it as a text file, and shows an official next step.
-- Includes a practice step: the user describes which documents she will take, and Saheli reminds her of any main document groups she did not mention.
+- Includes a practice step: the user describes which documents she will take, and ApniBaat reminds her of any main document groups she did not mention.
 - Uses Gemini to understand the question and identify mentioned documents when configured. The server selects source-reviewed Hindi answers; Gemini does not generate new benefit rules. If Gemini is unavailable, local matching selects saved guidance and the response is labeled accordingly.
 - Does not ask for Aadhaar numbers, bank-account numbers, or document uploads.
 
@@ -44,7 +44,7 @@ GEMINI_API_KEY=your_private_key_here
 GEMINI_MODEL=gemini-3.5-flash-lite
 ```
 
-4. Restart `npm run dev`. Open **मदद चाहिए**, ask **“कौन से कागज़ चाहिए?”**, and check the response label: **सहेली का जवाब** means a successful Gemini classification; **सहेजी गई जानकारी** is the fallback. The dialog header alone does not prove a successful live request.
+4. Restart `npm run dev`. Open **मदद चाहिए**, ask **“कौन से कागज़ चाहिए?”**, and check the response label: **अपनी बात का जवाब** means a successful Gemini classification; **सहेजी गई जानकारी** is the fallback. The dialog header alone does not prove a successful live request.
 
 Keep the key out of chat, screenshots, Git, and browser code. Do not use a `VITE_` prefix for it. `.env.local` is ignored by Git; the server reads the secret. Model access and quota depend on your account. [Google's key setup and security guide](https://ai.google.dev/gemini-api/docs/api-key).
 

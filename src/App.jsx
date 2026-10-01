@@ -14,6 +14,7 @@ export default function App() {
   const [audioOn, setAudioOn] = useState(true);
   const [speaking, setSpeaking] = useState(false);
   const [listening, setListening] = useState(false);
+  const [live, setLive] = useState('');
   const [notice, setNotice] = useState('');
   const [guide, setGuide] = useState(false);
   const [teachback, setTeachback] = useState(false);
@@ -29,6 +30,9 @@ export default function App() {
   const guideTrigger = useRef(null);
   const dialogRef = useRef(null);
   const started = useRef(false);
+  const utterance = useRef(null);
+  const listeningRef = useRef(false);
+  const resultHandler = useRef(null);
   const currentQuestion = QUESTIONS[questionIndex];
   const assessment = getAssessment(answers);
   const summary = getDocumentSummary(documents);
@@ -36,27 +40,36 @@ export default function App() {
 
   useEffect(() => {
     fetch('/api/health').then(r => r.ok ? r.json() : {}).then(r => setConfigured(Boolean(r.geminiConfigured))).catch(() => {});
-    return () => { recognition.current?.abort(); request.current?.abort(); window.speechSynthesis?.cancel(); };
+    const synth = window.speechSynthesis;
+    const warm = () => synth?.getVoices();
+    warm(); synth?.addEventListener?.('voiceschanged', warm);
+    return () => { synth?.removeEventListener?.('voiceschanged', warm); recognition.current?.abort(); request.current?.abort(); window.speechSynthesis?.cancel(); };
   }, []);
 
   function speak(text, force = false) {
     if (!audioOn && !force) return;
     const synth = window.speechSynthesis;
     if (!synth) { setNotice('इस ब्राउज़र पर आवाज़ उपलब्ध नहीं है. आप नीचे के बड़े बटन इस्तेमाल कर सकती हैं.'); return; }
+    if (listeningRef.current) return; // never talk over the microphone
     synth.cancel();
-    const voices = synth.getVoices();
-    const hindi = voices.find(v => v.lang.startsWith('hi'));
     const speech = new SpeechSynthesisUtterance(text);
-    speech.lang = 'hi-IN'; speech.rate = 0.88; speech.pitch = 1;
+    utterance.current = speech;
+    const hindi = synth.getVoices().find(v => v.lang.replace('_', '-').toLowerCase().startsWith('hi'));
+    speech.lang = 'hi-IN'; speech.rate = 0.9; speech.pitch = 1;
     if (hindi) speech.voice = hindi;
-    speech.onstart = () => setSpeaking(true);
-    speech.onend = () => setSpeaking(false);
-    speech.onerror = e => { setSpeaking(false); if (e.error !== 'interrupted' && e.error !== 'canceled') setNotice('हिंदी आवाज़ नहीं चल पाई. नीचे लिखे सवाल और बड़े बटन से आगे बढ़ें.'); };
-    synth.speak(speech);
+    speech.onstart = () => { if (utterance.current === speech) setSpeaking(true); };
+    speech.onend = () => { if (utterance.current === speech) setSpeaking(false); };
+    speech.onerror = e => {
+      if (utterance.current !== speech) return;
+      setSpeaking(false);
+      if (e.error !== 'interrupted' && e.error !== 'canceled') setNotice('हिंदी आवाज़ नहीं चल पाई. नीचे लिखे सवाल और बड़े बटन से आगे बढ़ें.');
+    };
+    // Chrome drops speak() issued in the same tick as cancel()
+    setTimeout(() => { if (utterance.current === speech) synth.speak(speech); }, 60);
   }
 
   function screenSpeech() {
-    if (screen === 'welcome') return 'नमस्ते. मैं सहेली हूँ. उज्ज्वला योजना के गैस कनेक्शन की तैयारी में आपकी मदद करूँगी. शुरू करने के लिए हाँ, मदद चाहिए वाला बटन दबाएँ.';
+    if (screen === 'welcome') return 'नमस्ते. मैं अपनी बात हूँ. उज्ज्वला योजना के गैस कनेक्शन की तैयारी में आपकी मदद करूँगी. शुरू करने के लिए हाँ, मदद चाहिए वाला बटन दबाएँ.';
     if (screen === 'questions') return `${currentQuestion.title} ${currentQuestion.hint} आप हाँ, नहीं, या पता नहीं चुन सकती हैं.`;
     if (screen === 'assessment') return `${assessment.title} ${assessment.message}`;
     if (screen === 'documents') return 'अब कागज़ों को एक एक करके देखें. जो आपके पास है, उसके लिए है चुनें. नहीं है तो नहीं है चुनें. आधार या बैंक का नंबर यहाँ न लिखें.';
@@ -91,7 +104,7 @@ export default function App() {
   }
   function reset() {
     recognition.current?.abort(); request.current?.abort(); request.current = null; window.speechSynthesis?.cancel();
-    started.current = false; setScreen('welcome'); setQuestionIndex(0); setAnswers({}); setDocuments({}); setGuide(false); setReply(null); setQuery(''); setBusy(false); setNotice(''); setSpeaking(false); setListening(false);
+    started.current = false; setScreen('welcome'); setQuestionIndex(0); setAnswers({}); setDocuments({}); setGuide(false); setReply(null); setQuery(''); setBusy(false); setNotice(''); setSpeaking(false); setMic(false);
   }
   function openGuide(isTeachback = false) {
     guideTrigger.current = document.activeElement;
@@ -99,8 +112,8 @@ export default function App() {
     if (isTeachback) speak('अब आप बताइए. गैस एजेंसी जाते समय आप कौन से कागज़ ले जाएँगी? बोलकर या लिखकर बताइए.');
   }
   function closeGuide() {
-    recognition.current?.abort(); request.current?.abort(); request.current = null; window.speechSynthesis?.cancel();
-    setGuide(false); setBusy(false); setSpeaking(false); guideTrigger.current?.focus();
+    recognition.current?.abort(); request.current?.abort(); request.current = null; stopSpeaking();
+    setGuide(false); setBusy(false); guideTrigger.current?.focus();
   }
   async function ask(text = query) {
     if (!text.trim() || busy) return;
@@ -120,37 +133,83 @@ export default function App() {
       setReply(data); speak(data.answer);
     } finally { clearTimeout(timer); if (request.current === controller) setBusy(false); }
   }
-  function listen(target = 'answer') {
-    if (listening) { recognition.current?.stop(); return; }
+  function stopSpeaking() { utterance.current = null; window.speechSynthesis?.cancel(); setSpeaking(false); }
+  function setMic(on) { listeningRef.current = on; setListening(on); if (!on) setLive(''); }
+  const starting = useRef(false);
+  async function listen(target = 'answer') {
+    if (listeningRef.current) { recognition.current?.stop(); return; }
+    if (starting.current) return;
     const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!Recognition) { setNotice('इस ब्राउज़र में बोलकर जवाब देना उपलब्ध नहीं है. आप बड़े बटन दबा सकती हैं या अपना सवाल लिख सकती हैं.'); if (target === 'guide') modalInput.current?.focus(); return; }
-    window.speechSynthesis?.cancel(); setSpeaking(false);
-    const rec = new Recognition(); recognition.current = rec;
-    rec.lang = 'hi-IN'; rec.interimResults = false; rec.continuous = false;
-    rec.onstart = () => { setListening(true); setNotice('सुन रही हूँ… अब बोलिए.'); };
-    rec.onend = () => setListening(false);
-    rec.onerror = () => { setListening(false); setNotice('आवाज़ नहीं मिली. माइक्रोफ़ोन की अनुमति दें या नीचे के बटन इस्तेमाल करें.'); };
-    rec.onresult = event => {
-      const text = event.results[0][0].transcript;
-      setNotice(`आपने कहा: “${text}”`); setListening(false);
+    if (!Recognition) { setNotice('इस ब्राउज़र में बोलकर जवाब देना उपलब्ध नहीं है. Chrome या Edge इस्तेमाल करें, या बड़े बटन दबाएँ.'); if (target === 'guide') modalInput.current?.focus(); return; }
+    stopSpeaking();
+    recognition.current?.abort();
+    starting.current = true; setNotice('माइक्रोफ़ोन चालू हो रहा है…');
+    // explicit permission check: surfaces a blocked / missing / busy mic instead of failing silently
+    try {
+      if (navigator.mediaDevices?.getUserMedia) {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(t => t.stop());
+      }
+    } catch (err) {
+      starting.current = false;
+      setNotice(err?.name === 'NotAllowedError' || err?.name === 'SecurityError' ? 'माइक्रोफ़ोन की अनुमति बंद है. पते वाली पट्टी में 🔒 दबाकर माइक को “अनुमति दें” करें, फिर पेज रीलोड करें.'
+        : err?.name === 'NotFoundError' ? 'कोई माइक्रोफ़ोन नहीं मिला. माइक जोड़ें और Windows की Sound > Input सेटिंग जाँचें.'
+        : 'माइक्रोफ़ोन इस समय दूसरे ऐप में चल रहा है. उसे बंद करके दोबारा दबाएँ. (' + (err?.name || 'error') + ')');
+      return;
+    }
+    await new Promise(r => setTimeout(r, 300)); // let the speaker / mic hand over after our own voice stops
+    starting.current = false;
+    const onScreen = screen;
+    resultHandler.current = text => {
+      setNotice(`आपने कहा: “${text}”`);
       if (target === 'guide') { setQuery(text); return; }
       const choice = speechChoice(text);
-      if (screen === 'questions' && choice) choose(choice);
+      if (onScreen === 'questions' && choice) choose(choice);
       else { openGuide(); setQuery(text); }
     };
-    try { rec.start(); } catch { setListening(false); setNotice('माइक्रोफ़ोन शुरू नहीं हुआ. आप बटन से आगे बढ़ सकती हैं.'); }
+    const rec = new Recognition(); recognition.current = rec;
+    let heard = false, failed = false;
+    rec.lang = 'hi-IN'; rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 3;
+    rec.onstart = () => { setMic(true); setLive(''); setNotice(''); };
+    rec.onspeechstart = () => setLive('…');
+    rec.onresult = event => {
+      const last = event.results[event.results.length - 1];
+      if (!last.isFinal) { setLive(Array.from(event.results).map(r => r[0].transcript).join(' ')); return; }
+      const alts = Array.from(last || []);
+      // for yes/no questions prefer whichever alternative maps to a clear choice
+      const best = (target === 'answer' && onScreen === 'questions' && alts.find(x => speechChoice(x.transcript))) || alts[0];
+      if (!best?.transcript?.trim()) return;
+      heard = true; setMic(false);
+      if (recognition.current === rec) resultHandler.current?.(best.transcript.trim());
+    };
+    rec.onerror = e => {
+      failed = true;
+      if (e.error === 'aborted') return;
+      console.warn('speech recognition error:', e.error);
+      setNotice(e.error === 'not-allowed' || e.error === 'service-not-allowed' ? 'माइक्रोफ़ोन की अनुमति बंद है. ब्राउज़र के पते वाली पट्टी में माइक की अनुमति दें, फिर दोबारा दबाएँ.'
+        : e.error === 'no-speech' ? 'कुछ सुनाई नहीं दिया. माइक का बटन दबाकर पास से बोलें.'
+        : e.error === 'audio-capture' ? 'माइक्रोफ़ोन नहीं मिला. उसे जोड़ें या नीचे के बटन इस्तेमाल करें.'
+        : e.error === 'network' ? 'आवाज़ पहचानने के लिए इंटरनेट चाहिए. नीचे के बटन इस्तेमाल करें.'
+        : 'आवाज़ नहीं मिली. दोबारा कोशिश करें या नीचे के बटन इस्तेमाल करें. (' + e.error + ')');
+    };
+    rec.onend = () => {
+      if (recognition.current === rec) recognition.current = null;
+      setMic(false);
+      if (!heard && !failed) setNotice('कुछ सुनाई नहीं दिया. दोबारा बोलकर देखें.');
+    };
+    try { rec.start(); } catch { recognition.current = null; setMic(false); setNotice('माइक्रोफ़ोन शुरू नहीं हुआ. एक पल बाद दोबारा दबाएँ.'); }
   }
-  function toggleAudio() { if (audioOn) { window.speechSynthesis?.cancel(); setSpeaking(false); } else speak(screenSpeech(), true); setAudioOn(!audioOn); }
+  function toggleAudio() { if (audioOn) stopSpeaking(); else speak(screenSpeech(), true); setAudioOn(!audioOn); }
   function downloadChecklist() {
-    const lines = ['सहेली — मेरी उज्ज्वला तैयारी', '', 'आवेदन जमा नहीं हुआ है. अंतिम जाँच गैस एजेंसी करेगी.', '', ...DOCUMENTS.map(d => `${documents[d.id]==='ready'?'तैयार':'जाँच / तैयारी बाकी'}: ${d.title}\n${d.detail}`), '', 'गैस एजेंसी पर आधार की बायोमेट्रिक पहचान और घर पर जाँच ज़रूरी है.', 'प्रवासी परिवारों के लिए निर्धारित स्व-घोषणा का विकल्प हो सकता है. गैस एजेंसी से पूछें.', 'सरकारी हेल्पलाइन: 14438', `सरकारी जानकारी: ${SOURCE}`, `नियम और सवाल: ${FAQ}`, 'जानकारी देखी गई: 1 अक्टूबर 2026'];
+    const lines = ['ApniBaat — मेरी उज्ज्वला तैयारी', '', 'आवेदन जमा नहीं हुआ है. अंतिम जाँच गैस एजेंसी करेगी.', '', ...DOCUMENTS.map(d => `${documents[d.id]==='ready'?'तैयार':'जाँच / तैयारी बाकी'}: ${d.title}\n${d.detail}`), '', 'गैस एजेंसी पर आधार की बायोमेट्रिक पहचान और घर पर जाँच ज़रूरी है.', 'प्रवासी परिवारों के लिए निर्धारित स्व-घोषणा का विकल्प हो सकता है. गैस एजेंसी से पूछें.', 'सरकारी हेल्पलाइन: 14438', `सरकारी जानकारी: ${SOURCE}`, `नियम और सवाल: ${FAQ}`, 'जानकारी देखी गई: 1 अक्टूबर 2026'];
     const url = URL.createObjectURL(new Blob(['\uFEFF'+lines.join('\n')], { type:'text/plain;charset=utf-8' }));
-    const a = document.createElement('a'); a.href = url; a.download='Saheli-Ujjwala-Checklist.txt'; a.click(); setTimeout(() => URL.revokeObjectURL(url),1000);
+    const a = document.createElement('a'); a.href = url; a.download='ApniBaat-Ujjwala-Checklist.txt'; a.click(); setTimeout(() => URL.revokeObjectURL(url),1000);
     setNotice('आपकी सूची फ़ोन या कंप्यूटर में सेव हो गई है.');
   }
 
   return <div className="app-shell">
     <header className="header">
-      <a className="brand" href="#" onClick={e=>{e.preventDefault(); if(screen==='welcome') speak(screenSpeech(),true);}} aria-label="सहेली"><span className="brand-icon"><HeartHandshake size={25}/></span><span>सहेली<small>हर कदम पर, आपके साथ</small></span></a>
+      <a className="brand" href="#" onClick={e=>{e.preventDefault(); if(screen==='welcome') speak(screenSpeech(),true);}} aria-label="ApniBaat"><span className="brand-icon"><HeartHandshake size={25}/></span><span>ApniBaat<small>हर कदम पर, आपके साथ</small></span></a>
       <div className="header-actions"><span className="language">हिंदी</span><button className={`audio-toggle ${audioOn?'active':''}`} onClick={toggleAudio} aria-pressed={audioOn}>{audioOn?<Volume2 size={19}/>:<VolumeX size={19}/>}<span>आवाज़ {audioOn?'चालू':'बंद'}</span></button></div>
     </header>
 
@@ -158,8 +217,8 @@ export default function App() {
       <aside className="companion">
         <div className="companion-top"><span className="eyebrow">आपकी अपनी साथी</span><span className="petal-mark">✳</span></div>
         <div className={`voice-orb ${speaking||listening?'is-active':''}`} aria-hidden="true"><div className="orb-ring ring-one"/><div className="orb-ring ring-two"/><div className="orb-core"><HeartHandshake size={52} strokeWidth={1.4}/></div><div className="voice-bars">{[1,2,3,4,5].map(i=><i key={i} style={{'--i':i}}/>)}</div></div>
-        <div className="companion-copy"><h2>{listening?'मैं सुन रही हूँ…':speaking?'सुनिए, मैं बताती हूँ…':'नमस्ते, मैं सहेली हूँ।'}</h2><p>धीरे-धीरे, एक कदम साथ चलेंगे।<br/>आप कभी भी दोबारा पूछ सकती हैं।</p></div>
-        <button className="listen-button" onClick={()=>{if(speaking){window.speechSynthesis?.cancel();setSpeaking(false);}else speak(screenSpeech(),true);}}>{speaking?<Pause size={19}/>:<Volume2 size={19}/>} {speaking?'आवाज़ रोकें':'मेरी बात सुनें'}</button>
+        <div className="companion-copy"><h2>{listening?'मैं सुन रही हूँ…':speaking?'सुनिए, मैं बताती हूँ…':'नमस्ते, मैं अपनी बात हूँ।'}</h2><p>धीरे-धीरे, एक कदम साथ चलेंगे।<br/>आप कभी भी दोबारा पूछ सकती हैं।</p></div>
+        <button className="listen-button" onClick={()=>{if(speaking)stopSpeaking();else speak(screenSpeech(),true);}}>{speaking?<Pause size={19}/>:<Volume2 size={19}/>} {speaking?'आवाज़ रोकें':'मेरी बात सुनें'}</button>
         <div className="journey" aria-label="आपकी तैयारी के चरण">{['थोड़ी सी जानकारी','कागज़ों की तैयारी','आपका अगला कदम'].map((label,i)=><div className={`journey-step ${progress>i?'current':''}`} key={label}><span>{progress>i+1?<Check size={15}/>:i+1}</span><p>{label}</p>{progress===i+1&&<span className="step-here">अभी</span>}</div>)}</div>
         <div className="private-note"><ShieldCheck size={19}/><span>यहाँ आधार या बैंक का नंबर<br/>नहीं माँगा जाएगा।</span></div>
       </aside>
@@ -189,6 +248,7 @@ export default function App() {
               <button className={`choice unsure ${answers[currentQuestion.id]==='unknown'?'selected':''}`} onClick={()=>choose('unknown')}><span><HelpCircle size={25}/></span>पता नहीं</button>
             </div>
             <button className={`voice-answer ${listening?'recording':''}`} onClick={()=>listen()}><Mic size={23}/>{listening?'सुन रही हूँ… रोकें':'या बोलकर जवाब दें'}</button>
+            {listening&&<div className="live-caption" role="status" aria-live="polite"><span className="live-dot"/><div><small>सुन रही हूँ… बोलिए</small><p>{live||'आपकी आवाज़ यहाँ दिखेगी'}</p></div></div>}
             <p className="micro-hint">कुछ समझ न आए तो नीचे “मदद चाहिए” दबाएँ।</p>
           </>}
 
@@ -232,11 +292,12 @@ export default function App() {
     {sourcesOpen&&<section className="sources"><h2>हमारी जानकारी कहाँ से आती है?</h2><p>योजना की जानकारी 1 अक्टूबर 2026 को आधिकारिक उज्ज्वला वेबसाइट से जाँची गई। नियम बदल सकते हैं। अंतिम पुष्टि गैस एजेंसी करेगी।</p><a href={SOURCE} target="_blank" rel="noreferrer">आवेदन और कागज़ों की सरकारी जानकारी <ExternalLink size={14}/></a><a href={FAQ} target="_blank" rel="noreferrer">सरकारी सवाल-जवाब <ExternalLink size={14}/></a><p>आवाज़ पहचानने के लिए आपका ब्राउज़र आवाज़ को अपनी सेवा तक भेज सकता है। पूछे गए सवाल AI सेवा तक जा सकते हैं। आधार, बैंक नंबर या दूसरी निजी जानकारी यहाँ न लिखें।</p></section>}
 
     <dialog ref={dialogRef} className="guide-dialog" onCancel={e=>{e.preventDefault();closeGuide();}} onClick={e=>{if(e.target===dialogRef.current)closeGuide();}} aria-labelledby="guide-title">
-      <div className="dialog-body"><div className="dialog-header"><span className="dialog-icon"><HeartHandshake size={28}/></span><div><h2 id="guide-title">{teachback?'एक छोटा-सा अभ्यास':'पूछिए, मैं साथ हूँ।'}</h2><p>{configured?'सहेली · AI की मदद से':'सहेली · सहेजी गई जानकारी'}</p></div><button className="icon-button" onClick={closeGuide} aria-label="मदद बंद करें"><X size={23}/></button></div>
+      <div className="dialog-body"><div className="dialog-header"><span className="dialog-icon"><HeartHandshake size={28}/></span><div><h2 id="guide-title">{teachback?'एक छोटा-सा अभ्यास':'पूछिए, मैं साथ हूँ।'}</h2><p>{configured?'ApniBaat · AI की मदद से':'ApniBaat · सहेजी गई जानकारी'}</p></div><button className="icon-button" onClick={closeGuide} aria-label="मदद बंद करें"><X size={23}/></button></div>
       <p className="dialog-intro">{teachback?'गैस एजेंसी जाते समय आप कौन से कागज़ साथ ले जाएँगी? अपने शब्दों में बताइए।':'अपना सवाल बोलकर या आसान शब्दों में लिखकर पूछिए।'}</p>
       {!teachback&&<div className="suggestions">{['कौन से कागज़ चाहिए?','राशन कार्ड नहीं है','क्या सारे सिलेंडर मुफ़्त हैं?'].map(q=><button key={q} disabled={busy} onClick={()=>ask(q)}>{q}</button>)}</div>}
+      {listening&&<div className="live-caption" role="status" aria-live="polite"><span className="live-dot"/><div><small>सुन रही हूँ… बोलिए</small><p>{live||'आपकी आवाज़ यहाँ दिखेगी'}</p></div></div>}
       <form onSubmit={e=>{e.preventDefault();ask();}}><label htmlFor="question-input">{teachback?'आपका जवाब':'आपका सवाल'}</label><textarea id="question-input" ref={modalInput} value={query} onChange={e=>setQuery(e.target.value)} maxLength={1200} placeholder={teachback?'मैं अपने साथ…':'यहाँ लिखिए…'} rows={3}/><div className="query-actions"><button type="button" className={`secondary ${listening?'recording':''}`} onClick={()=>listen('guide')}><Mic size={21}/>{listening?'सुन रही हूँ…':'बोलकर लिखें'}</button><button className="primary" disabled={!query.trim()||busy} type="submit">{busy?<LoaderCircle size={21} className="spin"/>:<Send size={19}/>} {busy?'एक पल…':teachback?'मेरा जवाब देखें':'जवाब बताएँ'}</button></div></form>
-      {reply&&<div className="reply" role="status"><div><span>{reply.mode==='live'?'सहेली का जवाब':reply.mode==='offline'?'सहेजी गई जानकारी':'अभी संपर्क नहीं हुआ'}</span><button className="icon-button" aria-label="जवाब सुनें" onClick={()=>speak(reply.answer,true)}><Volume2 size={21}/></button></div><p>{reply.answer}</p>{reply.mode==='offline'&&<small>अभी AI से बात नहीं हुई। यह पहले से जाँची हुई सामान्य जानकारी है।</small>}<a href={reply.sourceUrl||SOURCE} target="_blank" rel="noreferrer">सरकारी स्रोत देखें <ExternalLink size={14}/></a></div>}
+      {reply&&<div className="reply" role="status"><div><span>{reply.mode==='live'?'ApniBaat का जवाब':reply.mode==='offline'?'सहेजी गई जानकारी':'अभी संपर्क नहीं हुआ'}</span><button className="icon-button" aria-label="जवाब सुनें" onClick={()=>speak(reply.answer,true)}><Volume2 size={21}/></button></div><p>{reply.answer}</p>{reply.mode==='offline'&&<small>अभी AI से बात नहीं हुई। यह पहले से जाँची हुई सामान्य जानकारी है।</small>}<a href={reply.sourceUrl||SOURCE} target="_blank" rel="noreferrer">सरकारी स्रोत देखें <ExternalLink size={14}/></a></div>}
       {notice&&<p className="dialog-notice" role="status">{notice}</p>}<p className="privacy-line"><ShieldCheck size={15}/> आधार या बैंक का नंबर यहाँ न लिखें।</p></div>
     </dialog>
   </div>;

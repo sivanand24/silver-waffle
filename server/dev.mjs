@@ -40,5 +40,5 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const server = createApiServer();
   server.requestTimeout = 15000;
   server.headersTimeout = 10000;
-  server.listen(port, '127.0.0.1', () => console.log(`Saheli API ready at http://127.0.0.1:${port}`));
+  server.listen(port, '127.0.0.1', () => console.log(`ApniBaat API ready at http://127.0.0.1:${port}`));
 }
