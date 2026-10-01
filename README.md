@@ -69,8 +69,11 @@ At documentation handoff, **live Gemini credentials, microphone input, and the p
 - Try the microphone and Hindi playback; keep the buttons/text path ready if device support or permissions fail.
 - Verify a successful live AI classification and its response label after setting the key.
 - On the result screen, try **चलें, एक बार आप बताइए?** with **“मैं आधार और बैंक की पासबुक ले जाऊँगी।”** and check the document reminders.
-- Open official links, reload the deployed app, and test it on a phone.
-- Rehearse the [90-second demo and submission checklist](docs/demo-script.md).
+- Open official links -> https://silver-waffle-eta.vercel.app, reload the deployed app, and test it on a phone.
+
+## Live Link
+https://silver-waffle-eta.vercel.app
+  
 
 ## Sources and boundaries
 
